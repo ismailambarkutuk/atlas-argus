@@ -3,10 +3,11 @@
 //                                          └→ ARGUS ─┴→ commit → reveal → compare → risk → execute → report
 //
 // Örnek: npx tsx src/main.ts --replay recordings/BTC-USDT_demo.jsonl --inject drop --cached
+// Sürekli izleme: npx tsx src/main.ts --watch --symbol BTC-USDT  (Ctrl+C ile durur)
 import path from "node:path";
 import { config, isDryRun, killSwitchStatus } from "./config.js";
 import { ROOT, log, parseArgs, errMsg } from "./util.js";
-import { fetchClosedCandles, fetchTickerPrice, writeRecording } from "./data/collector.js";
+import { appendCandles, fetchClosedCandles, fetchTickerPrice, writeRecording } from "./data/collector.js";
 import { loadRecording } from "./data/replay.js";
 import { SCENARIOS, injectScenario, isScenario } from "./data/inject.js";
 import { Candle, roundIdFor, windowEnding } from "./data/types.js";
@@ -160,6 +161,92 @@ async function runRound(candles: Candle[], i: number, signals: Signals, ctx: Run
   return report;
 }
 
+/**
+ * Sürekli izleme: her dakika yeni kapanmış mumu çeker ve kontrol eder. Ctrl+C veya
+ * kill switch ile durur. Korumalar: tur sonrası bekleme süresi, oturum başına tur tavanı.
+ */
+async function watch(symbol: string, mode: AgentMode): Promise<void> {
+  const cooldownMs = config.watchCooldownMin * 60_000;
+  const maxRounds = Math.floor(config.watchMaxRounds);
+  let stopping = false;
+  let wake: (() => void) | undefined;
+  process.on("SIGINT", () => {
+    if (stopping) process.exit(130); // ikinci Ctrl+C: hemen çık
+    stopping = true;
+    log.warn("İZLEME", "Ctrl+C alındı → oturum kapanıyor (devam eden tur varsa bitmesi bekleniyor; hemen çıkmak için tekrar Ctrl+C)");
+    wake?.();
+  });
+  // Bir sonraki dakikanın 5. saniyesine kadar bekle (mumun kapanıp borsada onaylanması için pay)
+  const sleepToNextMinute = () =>
+    new Promise<void>((resolve) => {
+      const ms = 60_000 - (Date.now() % 60_000) + 5_000;
+      const t = setTimeout(resolve, ms);
+      wake = () => {
+        clearTimeout(t);
+        resolve();
+      };
+    });
+
+  let candles = await fetchClosedCandles(symbol, 300);
+  const file = writeRecording(candles, path.join(ROOT, "recordings", `${symbol}_watch_${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}.jsonl`));
+  log.stage("İZLEME", `${symbol} izleniyor · başlangıç ${candles.length} mum → ${path.relative(ROOT, file)}`);
+  log.stage("İZLEME", `Korumalar: tur sonrası ${config.watchCooldownMin} dk bekleme, oturum başına en fazla ${maxRounds} LLM turu. Durdurmak için Ctrl+C`);
+
+  const seal = createSealProvider();
+  let rounds = 0;
+  let triggers = 0;
+  let minutes = 0;
+  let lastRoundAt = -Infinity;
+
+  while (!stopping) {
+    const kill = killSwitchStatus();
+    if (kill.on) {
+      log.error("İZLEME", `KILL SWITCH AÇIK (${kill.reason}) → izleme durduruldu`);
+      break;
+    }
+    try {
+      const lastTs = candles[candles.length - 1].ts;
+      const fresh = (await fetchClosedCandles(symbol, 20)).filter((c) => c.ts > lastTs);
+      if (fresh.length === 0) {
+        log.info("İZLEME", "yeni kapanmış mum yok (borsa henüz onaylamadı), sonraki dakika tekrar bakılacak");
+      } else {
+        appendCandles(file, fresh);
+        candles = [...candles, ...fresh].slice(-300);
+        minutes += fresh.length;
+        if (fresh.length > 1) log.warn("İZLEME", `${fresh.length - 1} mum kaçırılmıştı; yalnızca en yenisi tura aday (eskiler bayat)`);
+        const i = candles.length - 1;
+        const s = computeSignals(candles, i);
+        const zs = `fiyat z=${s.priceZ.toFixed(2)}, hacim z=${s.volZ.toFixed(2)}`;
+        if (!s.triggered) {
+          log.ok("İZLEME", `${candles[i].iso.slice(11, 16)} UTC · ${zs} · normal → LLM yok`);
+        } else {
+          triggers++;
+          const sinceMs = Date.now() - lastRoundAt;
+          if (sinceMs < cooldownMs) {
+            log.warn("İZLEME", `${candles[i].iso.slice(11, 16)} UTC · TETİK (${s.triggerReasons.join(", ")}) ama bekleme süresinde (${Math.max(1, Math.round((cooldownMs - sinceMs) / 60_000))} dk kaldı) → LLM çağrılmadı`);
+          } else if (rounds >= maxRounds) {
+            log.warn("İZLEME", `${candles[i].iso.slice(11, 16)} UTC · TETİK ama oturum tur tavanı (${maxRounds}) doldu → LLM çağrılmadı`);
+          } else {
+            rounds++;
+            lastRoundAt = Date.now();
+            log.stage("İSTATİSTİK", `TETİK ${s.record_id}: ${zs} (${s.triggerReasons.join(", ")}) → tur ${rounds}/${maxRounds}`);
+            await runRound(candles, i, s, { mode, seal, fromReplay: false });
+          }
+        }
+      }
+    } catch (e) {
+      // Ağ/borsa hatası: çökme, logla ve bir sonraki dakikada tekrar dene
+      log.error("İZLEME", `bu dakika atlandı: ${errMsg(e)}`);
+    }
+    if (!stopping) await sleepToNextMinute();
+  }
+  log.banner([
+    `İZLEME OTURUMU BİTTİ · ${symbol}`,
+    `İzlenen yeni mum: ${minutes} · tetik: ${triggers} · LLM turu: ${rounds}/${maxRounds}`,
+    `Kayıt: ${path.relative(ROOT, file)}`,
+  ]);
+}
+
 async function main(): Promise<void> {
   const { flags, values } = parseArgs(process.argv.slice(2));
   if (flags.has("kill")) process.env.KILL_SWITCH = "1";
@@ -170,6 +257,19 @@ async function main(): Promise<void> {
   }
   const replayFile = values.get("replay");
   if (scenario && !replayFile) throw new Error("--inject yalnızca --replay ile kullanılır");
+  if (flags.has("watch")) {
+    if (replayFile) throw new Error("--watch anlık veriyle çalışır; --replay ile birlikte kullanılmaz");
+    if (mode === "cached") throw new Error("--watch ile --cached kullanılmaz (anlık veride kayıtlı yanıt olamaz)");
+    const symbol = (values.get("symbol") ?? "BTC-USDT").toUpperCase();
+    const kill = killSwitchStatus();
+    log.banner([
+      "ATLAS–ARGUS · SÜREKLİ İZLEME (--watch)",
+      `Sembol: ${symbol} · veri: OKX anlık, her dakika`,
+      `DRY_RUN: ${isDryRun() ? "AÇIK — emir gönderilmez" : "KAPALI — demo hesaba emir gidebilir"}`,
+      `Kill switch: ${kill.on ? `AÇIK (${kill.reason})` : "kapalı"}`,
+    ]);
+    return watch(symbol, mode);
+  }
   const maxRounds = Number(values.get("max-rounds") ?? 1);
   const kill = killSwitchStatus();
 

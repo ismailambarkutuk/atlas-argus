@@ -85,6 +85,11 @@ export function writeRecording(candles: Candle[], file?: string): string {
   return out;
 }
 
+/** Mevcut kayıt dosyasının sonuna mum ekler (--watch oturumu tek dosyada birikir). */
+export function appendCandles(file: string, candles: Candle[]): void {
+  if (candles.length) fs.appendFileSync(file, candles.map((c) => JSON.stringify(c)).join("\n") + "\n", "utf8");
+}
+
 // Demo: npx tsx src/data/collector.ts --symbol BTC-USDT --count 300 [--out recordings/x.jsonl]
 if (isMain(import.meta.url)) {
   const { values } = parseArgs(process.argv.slice(2));

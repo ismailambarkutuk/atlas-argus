@@ -85,6 +85,10 @@ export const config = Object.freeze({
   triggerVolumeZ: positive("TRIGGER_VOLUME_Z", 3),
   confirmPriceZ: positive("CONFIRM_PRICE_Z", 3),
   confirmVolumeZ: positive("CONFIRM_VOLUME_Z", 2),
+
+  // --watch: bir turdan sonra yeni tur açılmadan beklenen süre ve oturum başına en fazla tur
+  watchCooldownMin: positive("WATCH_COOLDOWN_MIN", 10),
+  watchMaxRounds: positive("WATCH_MAX_ROUNDS", 10),
 });
 
 if (config.reduceFraction > 1) throw new Error("Yapılandırma hatası: REDUCE_FRACTION 0 ile 1 arasında olmalı");
