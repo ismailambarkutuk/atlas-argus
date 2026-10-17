@@ -4,7 +4,7 @@
 import { spawn, execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { log, errMsg, isMain } from "./util.js";
+import { ROOT, log, errMsg, isMain } from "./util.js";
 import { SECRET_ENV_NAMES } from "./config.js";
 
 export interface OkxResult {
@@ -48,10 +48,13 @@ function withJson(args: string[]): string[] {
 
 let cachedEntry: string | null | undefined;
 
-/** npm global kökünde okx-trade-cli paketinin bin giriş dosyasını bulur. */
+/**
+ * okx-trade-cli (OKX Agent Trade Kit) paketinin bin giriş dosyasını bulur.
+ * Önce projenin kendi node_modules'u (package.json'da sabit sürüm), yoksa npm global kökü.
+ */
 export function resolveOkxEntry(): string | null {
   if (cachedEntry !== undefined) return cachedEntry;
-  const roots: string[] = [];
+  const roots: string[] = [path.join(ROOT, "node_modules")];
   if (process.env.APPDATA) roots.push(path.join(process.env.APPDATA, "npm", "node_modules"));
   try {
     const r = execSync("npm root -g", { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 15000 }).trim();
