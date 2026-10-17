@@ -205,7 +205,7 @@ async function main(): Promise<void> {
 
   let byLevel: Record<string, unknown> | undefined;
   if (!statsOnly) {
-    const rows = [["uyum seviyesi", "n", "anomali iddiası", "isabet @15", "isabet @60", "yanlış alarm @60", "sakin pencerede alarm"]];
+    const rows = [["uyum seviyesi", "n", "anomali iddiası", "15 dk'da hareket sürdü", "60 dk'da hareket sürdü", "yanlış alarm (sakin piyasada)"]];
     byLevel = {};
     for (const lv of ["YUKSEK", "ORTA", "BELIRSIZ"] as Level[]) {
       const g = windows.filter((w) => w.level === lv);
@@ -213,15 +213,19 @@ async function main(): Promise<void> {
       const hit15 = sig(claimed, 15);
       const hit60 = sig(claimed, 60);
       const calmAlarms = claimed.filter((w) => w.kind === "sakin").length;
-      rows.push([LEVEL_TR[lv], String(g.length), String(claimed.length), pct(hit15, claimed.length), pct(hit60, claimed.length), pct(claimed.length - hit60, claimed.length), String(calmAlarms)]);
-      byLevel[lv] = { n: g.length, claimed: claimed.length, hit15, hit60, falseAlarm60: claimed.length - hit60, calmAlarms };
+      rows.push([LEVEL_TR[lv], String(g.length), String(claimed.length), pct(hit15, claimed.length), pct(hit60, claimed.length), String(calmAlarms)]);
+      byLevel[lv] = { n: g.length, claimed: claimed.length, hit15, hit60, notSustained60: claimed.length - hit60, calmAlarms };
     }
     const errored = windows.filter((w) => w.agentError);
-    rows.push(["agent hatası (hariç)", String(errored.length), "-", "-", "-", "-", "-"]);
+    rows.push(["agent hatası (hariç)", String(errored.length), "-", "-", "-", "-"]);
     byLevel.agentError = errored.length;
     const models = [...new Set(windows.flatMap((w) => w.models ?? []).map((m) => m.replace(" (kayıt)", "")))];
     log.info("DEĞERLENDİRME", `Kullanılan modeller: ${models.join(", ")}`);
-    table("Uyum seviyesine göre isabet ve yanlış alarm (agent hatası olan pencereler hariç)", rows);
+    table("Uyum seviyesine göre: anomali iddiasından sonra hareket sürdü mü? (agent hatası olan pencereler hariç)", rows);
+    log.info(
+      "DEĞERLENDİRME",
+      "Okuma: \"hareket sürdü\" = iddiadan SONRA oynaklık/fiyat değişimi de anlamlı kaldı. Sürmemesi, tespit edilen ani hareketin yatıştığını gösterir; tespitin yanlış olduğunu değil. Yanlış alarm = sakin piyasada anomali iddiası.",
+    );
     if (errored.length) log.warn("DEĞERLENDİRME", `${errored.length} pencerede agent çağrısı başarısız (limit/ağ); uyum tablosuna dahil edilmedi`);
   }
 
