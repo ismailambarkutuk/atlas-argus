@@ -82,13 +82,33 @@ function decimals(step: string): number {
   return i < 0 ? 0 : step.length - i - 1;
 }
 
-/** Miktarı lot adımına aşağı yuvarlar (tam sayı birimlerle, kayan nokta kayması olmadan). */
-export function floorToLot(qty: number, lotSz: string): { units: number; text: string } {
+/**
+ * q × 10^d değerini aşağı yuvarlanmış tam sayı olarak verir. q önce 15 anlamlı basamaklı
+ * ondalığa çevrilir (Number'ın güvenilir hassasiyeti): float gürültüsü atılır, "0.29" gibi
+ * borsadan gelen ondalıklar birebir korunur. Kesme BigInt ile yapılır; asla yukarı yuvarlamaz.
+ */
+function scaledFloor(q: number, d: number): bigint {
+  const [mantissa, exp] = q.toExponential(14).split("e"); // "2.90000000000000e-1"
+  const digits = BigInt(mantissa.replace(".", "")); // 15 basamak
+  const shift = Number(exp) - 14 + d; // q × 10^d = digits × 10^shift
+  return shift >= 0 ? digits * 10n ** BigInt(shift) : digits / 10n ** BigInt(-shift);
+}
+
+/** İki ondalık metni ortak ölçekte tam olarak karşılaştırır: a ≥ b. */
+export function atLeast(a: string, b: string): boolean {
+  const d = Math.max(decimals(a), decimals(b));
+  const scaled = (s: string) => BigInt(s.replace(".", "") + "0".repeat(d - decimals(s)));
+  return scaled(a) >= scaled(b);
+}
+
+/** Miktarı lot adımına aşağı yuvarlar. Dönen `units`, 10^-d biriminde tam sayıdır. */
+export function floorToLot(qty: number, lotSz: string): { units: bigint; text: string } {
   const d = decimals(lotSz);
-  const scale = 10 ** d;
-  const lotUnits = Math.round(Number(lotSz) * scale);
-  const units = Math.floor(Math.floor(qty * scale + 1e-9) / lotUnits) * lotUnits;
-  return { units, text: (units / scale).toFixed(d) };
+  if (!Number.isFinite(qty) || qty <= 0) return { units: 0n, text: (0).toFixed(d) };
+  const lotUnits = BigInt(lotSz.replace(".", "")); // "0.00000001" → 1n, "0.0010" → 10n
+  const units = (scaledFloor(qty, d) / lotUnits) * lotUnits;
+  const s = units.toString().padStart(d + 1, "0");
+  return { units, text: d === 0 ? s : `${s.slice(0, -d)}.${s.slice(-d)}` };
 }
 
 function reject(action: RiskAction, reasons: string[], why: string): RiskDecision {
@@ -146,7 +166,7 @@ export function evaluateRisk(input: RiskInput): RiskDecision {
   const qty = floorToLot(target / input.price, lotSz);
   const maxQty = floorToLot(input.balance.available, lotSz);
   if (qty.units > maxQty.units) return reject("REDUCE", r, "emir bakiyeyi aşıyor");
-  if (qty.units <= 0 || Number(qty.text) < Number(minSz)) return reject("REDUCE", r, `miktar ${qty.text} ${baseCcy} minimum ${minSz} altında`);
+  if (qty.units <= 0n || !atLeast(qty.text, minSz)) return reject("REDUCE", r, `miktar ${qty.text} ${baseCcy} minimum ${minSz} altında`);
   if (!DECIMAL.test(qty.text)) return reject("REDUCE", r, "miktar biçimi geçersiz");
 
   const order: ValidatedOrder = {
