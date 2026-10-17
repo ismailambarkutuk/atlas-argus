@@ -6,3 +6,4 @@ KILL
 state/
 reports/
 recordings/seals/
+!docs/data/reports/
