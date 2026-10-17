@@ -1,0 +1,9 @@
+{
+  "agent": "ATLAS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792226580000-INJ-whipsaw",
+  "input_hash": "4e1d63ad7fa7c2d6",
+  "model": "gemini-3.8-flash",
+  "raw_text": "{\"agent\":\"ATLAS\",\"round_id\":\"t-30b6790e1f\",\"symbol\":\"BTC-USDT\",\"anomaly\":true,\"type\":\"volume_spike\",\"direction\":\"none\",\"severity\":0.92,\"confidence\":0.95,\"evidence\":[{\"record_id\":\"r-0060\",\"note\":\"Hacim olağandışı şekilde 126.69 BTC'ye fırladı (önceki mumlara göre 100 kattan fazla artış). Fiyat 80717.4 seviyesine kadar sert iğne atsa da 81692.9 seviyesinden kapanarak net değişim göstermedi.\"},{\"record_id\":\"r-0059\",\"note\":\"Önceki mumda hacim sadece 0.052 BTC seviyesindeydi.\"}],\"explanation\":\"Son 1 dakikalık mumda (r-0060) piyasa ortalamasının katbekat üzerinde devasa bir hacim patlaması (126.69 BTC) yaşanmış, alt yönde derin bir iğne oluşmasına karşın kapanış fiyatı açılışa çok yakın gerçekleşerek belirgin bir net fiyat değişimi yaratmamıştır.\"}",
+  "recorded_at": "2026-10-17T10:24:55.108Z"
+}

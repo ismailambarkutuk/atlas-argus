@@ -5,6 +5,7 @@ import { spawn, execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { log, errMsg, isMain } from "./util.js";
+import { SECRET_ENV_NAMES } from "./config.js";
 
 export interface OkxResult {
   ok: boolean;
@@ -19,8 +20,6 @@ export interface OkxResult {
 const OKX_PACKAGE = path.join("@okx_ai", "okx-trade-cli");
 const SAFE_ARG = /^[A-Za-z0-9._:\-,]+$/;
 const DEFAULT_TIMEOUT_MS = 30000;
-// Alt sürece aktarılmayacak sırlar
-const SECRET_ENV = ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "AVAX_PRIVATE_KEY"];
 
 /**
  * Argüman beyaz listesi (kural 1 ve 4): yalnızca güvenli karakterler, profil
@@ -77,7 +76,7 @@ export function resolveOkxEntry(): string | null {
 
 function childEnv(): NodeJS.ProcessEnv {
   const env = { ...process.env };
-  for (const k of SECRET_ENV) delete env[k];
+  for (const k of SECRET_ENV_NAMES) delete env[k]; // sırlar alt sürece aktarılmaz
   return env;
 }
 

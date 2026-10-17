@@ -25,11 +25,42 @@ function positive(name: string, def: number): number {
   return v;
 }
 
+/**
+ * LLM sağlayıcıları. OpenAI uyumlu olanlar (openai, gemini, groq) aynı istemciden geçer.
+ * Her sağlayıcının anahtarı kendi değişkeninden okunur.
+ */
+export const PROVIDERS = {
+  anthropic: { keyEnv: "ANTHROPIC_API_KEY", baseURL: undefined, defaultModel: "claude-haiku-5-5" },
+  openai: { keyEnv: "OPENAI_API_KEY", baseURL: undefined, defaultModel: "" },
+  gemini: { keyEnv: "GEMINI_API_KEY", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", defaultModel: "gemini-3.8-flash" },
+  groq: { keyEnv: "GROQ_API_KEY", baseURL: "https://api.groq.com/openai/v1", defaultModel: "openai/gpt-oss-120b" },
+} as const;
+export type ProviderName = keyof typeof PROVIDERS;
+export const SECRET_ENV_NAMES = [...new Set(Object.values(PROVIDERS).map((p) => p.keyEnv)), "AVAX_PRIVATE_KEY"];
+
+function provider(name: string, def: ProviderName): ProviderName {
+  const v = str(name, def).toLowerCase();
+  if (!(v in PROVIDERS)) throw new Error(`Yapılandırma hatası: ${name}="${v}"; seçenekler: ${Object.keys(PROVIDERS).join(", ")}`);
+  return v as ProviderName;
+}
+
+export interface AgentLlm {
+  provider: ProviderName;
+  model: string;
+  apiKey: string;
+  keyEnv: string;
+  baseURL?: string;
+}
+
+function agentLlm(prefix: "ATLAS" | "ARGUS", def: ProviderName): AgentLlm {
+  const p = provider(`${prefix}_PROVIDER`, def);
+  const spec = PROVIDERS[p];
+  return { provider: p, model: str(`${prefix}_MODEL`) || spec.defaultModel, apiKey: str(spec.keyEnv), keyEnv: spec.keyEnv, baseURL: spec.baseURL };
+}
+
 export const config = Object.freeze({
-  anthropicApiKey: str("ANTHROPIC_API_KEY"),
-  openaiApiKey: str("OPENAI_API_KEY"),
-  atlasModel: str("ATLAS_MODEL", "claude-haiku-5-5"),
-  argusModel: str("ARGUS_MODEL"),
+  atlas: agentLlm("ATLAS", "anthropic"),
+  argus: agentLlm("ARGUS", "openai"),
   llmTimeoutMs: positive("LLM_TIMEOUT_MS", 45000),
 
   avaxRpcUrl: str("AVAX_RPC_URL", "https://api.avax-test.network/ext/bc/C/rpc"),
@@ -58,9 +89,7 @@ export const config = Object.freeze({
 
 if (config.reduceFraction > 1) throw new Error("Yapılandırma hatası: REDUCE_FRACTION 0 ile 1 arasında olmalı");
 
-registerSecret(config.anthropicApiKey);
-registerSecret(config.openaiApiKey);
-registerSecret(config.avaxPrivateKey);
+for (const k of SECRET_ENV_NAMES) registerSecret(str(k));
 
 /** DRY_RUN her çağrıda ortamdan okunur. Yalnızca tam olarak "0" gerçek (demo) emre izin verir. */
 export function isDryRun(): boolean {
@@ -79,8 +108,10 @@ export function killSwitchStatus(): { on: boolean; reason: string } {
 if (isMain(import.meta.url)) {
   log.stage("CONFIG", `DRY_RUN: ${isDryRun() ? "AÇIK (emir gönderilmez)" : "KAPALI (demo emir gönderilebilir)"}`);
   log.stage("CONFIG", `Kill switch: ${killSwitchStatus().reason}`);
-  log.stage("CONFIG", `ATLAS modeli: ${config.atlasModel || "(yok)"} | anahtar: ${config.anthropicApiKey ? "var" : "YOK"}`);
-  log.stage("CONFIG", `ARGUS modeli: ${config.argusModel || "(yok)"} | anahtar: ${config.openaiApiKey ? "var" : "YOK"}`);
+  for (const [name, a] of [["ATLAS", config.atlas], ["ARGUS", config.argus]] as const) {
+    log.stage("CONFIG", `${name}: ${a.provider} / ${a.model || "(model yok)"} | ${a.keyEnv}: ${a.apiKey ? "var" : "YOK"}`);
+  }
+  if (config.atlas.provider === config.argus.provider) log.warn("CONFIG", "ATLAS ve ARGUS aynı sağlayıcıda: bağımsızlık zayıflar");
   log.stage("CONFIG", `Mühür: ${config.sealProvider} | cüzdan anahtarı: ${config.avaxPrivateKey ? "var" : "YOK"}`);
   log.stage(
     "CONFIG",

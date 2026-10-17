@@ -1,0 +1,9 @@
+{
+  "agent": "ATLAS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792226580000-INJ-drop",
+  "input_hash": "642bbf37d7ad7e9b",
+  "model": "gemini-3.8-flash",
+  "raw_text": "{\n  \"agent\": \"ATLAS\",\n  \"round_id\": \"t-beeeaa373e\",\n  \"symbol\": \"BTC-USDT\",\n  \"anomaly\": true,\n  \"type\": \"price_drop\",\n  \"direction\": \"down\",\n  \"severity\": 0.9,\n  \"confidence\": 0.98,\n  \"evidence\": [\n    {\n      \"record_id\": \"r-0060\",\n      \"note\": \"Fiyat 81697.8 seviyesinden 80723.3 seviyesine sert bir düşüş yaşamış, hacim olağandışı şekilde 126.69 BTC'ye fırlamıştır.\"\n    },\n    {\n      \"record_id\": \"r-0059\",\n      \"note\": \"Önceki mumda hacim 0.05 BTC ve fiyat 81697.8 seviyesindeyken olağan seyir gözlenmektedir.\"\n    }\n  ],\n  \"explanation\": \"Son 1 dakikalık mumda (r-0060) ortalamanın 100 katından fazla bir hacim patlamasıyla birlikte 1000 dolara yakın (~%1.2) ani ve sert bir fiyat düşüşü gerçekleşmiştir.\"\n}",
+  "recorded_at": "2026-10-17T10:23:43.587Z"
+}

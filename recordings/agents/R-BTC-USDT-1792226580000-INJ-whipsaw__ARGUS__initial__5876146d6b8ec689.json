@@ -1,0 +1,9 @@
+{
+  "agent": "ARGUS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792226580000-INJ-whipsaw",
+  "input_hash": "5876146d6b8ec689",
+  "model": "openai/gpt-oss-120b",
+  "raw_text": "{\"agent\":\"ARGUS\",\"round_id\":\"t-30b6790e1f\",\"symbol\":\"BTC-USDT\",\"anomaly\":true,\"type\":\"price_drop\",\"direction\":\"down\",\"severity\":0.9,\"confidence\":0.95,\"evidence\":[{\"record_id\":\"r-0060\",\"note\":\"1 dakikalık kapanmış mumda fiyat 81710.1'den 81692.9'a düşmüş, düşük 80717.4 ile ani %1.2 düşüş ve hacim 126.69 ile önceki mumlara göre 30 kat artış\"}],\"explanation\":\"Son dakika mumunda ani fiyat düşüşü ve aşırı hacim artışı görülüyor, bu tipik bir fiyat düşüş (price_drop) anomalisidir\"}",
+  "recorded_at": "2026-10-17T10:24:42.034Z"
+}

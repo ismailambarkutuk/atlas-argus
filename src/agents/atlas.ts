@@ -1,9 +1,10 @@
-// ATLAS: Anthropic (Claude) ile bağımsız analiz. Uyuşmazlık turunda yalnızca
+// ATLAS: bağımsız analiz. Sağlayıcı ATLAS_PROVIDER ile seçilir (varsayılan Anthropic/Claude). Uyuşmazlık turunda yalnızca
 // hangi alanda ayrışıldığını öğrenir; ARGUS'un gerekçesini asla görmez.
 import Anthropic from "@anthropic-ai/sdk";
 import { config } from "../config.js";
 import { log, errMsg, withTimeout, isMain } from "../util.js";
 import { AgentMode, callOrReplay, inputHash } from "./cache.js";
+import { callOpenAICompatible } from "./llm.js";
 import {
   AgentInput,
   AgentOutcome,
@@ -19,13 +20,25 @@ import {
 
 const AGENT = "ATLAS" as const;
 
+const LLM = config.atlas;
+
+type Turn = { role: "user" | "assistant"; content: string };
+
+/** Seçili sağlayıcıya göre çağırır; Anthropic dışındakiler OpenAI uyumlu uç noktadan gider. */
+async function callLlm(messages: Turn[]): Promise<string> {
+  if (LLM.provider === "anthropic") return callClaude(messages);
+  return callOpenAICompatible(LLM, [{ role: "system", content: systemPrompt(AGENT) }, ...messages], AGENT);
+}
+
 async function callClaude(messages: Anthropic.MessageParam[]): Promise<string> {
-  if (!config.anthropicApiKey) throw new Error("ANTHROPIC_API_KEY tanımlı değil");
-  if (!config.atlasModel) throw new Error("ATLAS_MODEL tanımlı değil");
-  const client = new Anthropic({ apiKey: config.anthropicApiKey, timeout: config.llmTimeoutMs, maxRetries: 1 });
+  // Anahtar yalnızca kendi sağlayıcısına gider: başka sağlayıcının anahtarı Anthropic'e asla gönderilmez
+  if (LLM.provider !== "anthropic") throw new Error(`ATLAS sağlayıcısı ${LLM.provider}; Anthropic çağrısı engellendi`);
+  if (!LLM.apiKey) throw new Error(`${LLM.keyEnv} tanımlı değil`);
+  if (!LLM.model) throw new Error("ATLAS_MODEL tanımlı değil");
+  const client = new Anthropic({ apiKey: LLM.apiKey, timeout: config.llmTimeoutMs, maxRetries: 1 });
   const res = await withTimeout(
     client.messages.create({
-      model: config.atlasModel,
+      model: LLM.model,
       max_tokens: 4096,
       system: systemPrompt(AGENT),
       messages,
@@ -49,15 +62,15 @@ export async function runAtlas(input: AgentInput, mode: AgentMode): Promise<Agen
   const user = dataPrompt(input);
   const hash = inputHash(AGENT, "initial", systemPrompt(AGENT), user);
   try {
-    log.agent(AGENT, `analiz başladı (${mode === "cached" ? "KAYITLI YANIT" : config.atlasModel})`);
+    log.agent(AGENT, `analiz başladı (${mode === "cached" ? "KAYITLI YANIT" : `${LLM.provider}/${LLM.model}`})`);
     const { raw, cached } = await callOrReplay(
       mode,
-      { agent: AGENT, phase: "initial", round_id: input.round_id, input_hash: hash, model: config.atlasModel },
-      () => callClaude([{ role: "user", content: user }]),
+      { agent: AGENT, phase: "initial", round_id: input.round_id, input_hash: hash, model: LLM.model },
+      () => callLlm([{ role: "user", content: user }]),
     );
-    return outcomeFromRaw(raw, AGENT, input, { phase: "initial", cached, model: config.atlasModel, durationMs: Date.now() - started });
+    return outcomeFromRaw(raw, AGENT, input, { phase: "initial", cached, model: LLM.model, durationMs: Date.now() - started });
   } catch (e) {
-    return failedOutcome(AGENT, "initial", config.atlasModel, started, errMsg(e));
+    return failedOutcome(AGENT, "initial", LLM.model, started, errMsg(e));
   }
 }
 
@@ -67,7 +80,7 @@ export async function runAtlas(input: AgentInput, mode: AgentMode): Promise<Agen
  */
 export async function runAtlasDispute(input: AgentInput, previous: AgentOutcome, fields: string[], mode: AgentMode): Promise<AgentOutcome> {
   const started = Date.now();
-  if (!previous.ok || !previous.finding || !previous.raw) return failedOutcome(AGENT, "dispute", config.atlasModel, started, "önceki ATLAS bulgusu geçersiz");
+  if (!previous.ok || !previous.finding || !previous.raw) return failedOutcome(AGENT, "dispute", LLM.model, started, "önceki ATLAS bulgusu geçersiz");
   const prev: Finding = previous.finding;
   const user = dataPrompt(input);
   // ATLAS'a kendi kullandığı kanıtlar, gördüğü opak kimliklerle hatırlatılır
@@ -78,17 +91,17 @@ export async function runAtlasDispute(input: AgentInput, previous: AgentOutcome,
     log.agent(AGENT, `uyuşmazlık turu: yalnızca "${fields.join(", ")}" alanında ayrışıldığı bildirildi`);
     const { raw, cached } = await callOrReplay(
       mode,
-      { agent: AGENT, phase: "dispute", round_id: input.round_id, input_hash: hash, model: config.atlasModel },
+      { agent: AGENT, phase: "dispute", round_id: input.round_id, input_hash: hash, model: LLM.model },
       () =>
-        callClaude([
+        callLlm([
           { role: "user", content: user },
           { role: "assistant", content: previous.raw! },
           { role: "user", content: followUp },
         ]),
     );
-    return outcomeFromRaw(raw, AGENT, input, { phase: "dispute", cached, model: config.atlasModel, durationMs: Date.now() - started });
+    return outcomeFromRaw(raw, AGENT, input, { phase: "dispute", cached, model: LLM.model, durationMs: Date.now() - started });
   } catch (e) {
-    return failedOutcome(AGENT, "dispute", config.atlasModel, started, errMsg(e));
+    return failedOutcome(AGENT, "dispute", LLM.model, started, errMsg(e));
   }
 }
 
