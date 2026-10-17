@@ -123,6 +123,7 @@ Soru: *Uyumu yüksek bulgular gerçekten daha isabetli mi?* Gerçek BTC-USDT 1 d
 
 - **Varsayılan `DRY_RUN=1`.** Gerçek emir yalnızca açıkça `DRY_RUN=0` ile gider.
 - **Yalnızca demo hesap veya izole etkinlik hesabı.** `OKX_ACCOUNT=demo`'da her emirde `--demo` zorunludur; `real` yalnızca bu iş için fonlanmış 30 USDT'lik hesapla, düşük limitlerle (bütçe 30, işlem başı 5, günlük zarar 5 USDT) kullanılır. API izni Read + Trade, çekim yok. Argümanlarda "live" geçen emir çalışma anında reddedilir.
+- **Kayıtlı veya enjekte veriden gerçek emir çıkmaz.** Replay modunda ya da pencerede ENJEKTE kayıt varsa emir, `DRY_RUN=0` olsa bile yalnızca hazırlanır. Gerçek emir yalnızca anlık piyasa verisinden (canlı mod, `--watch`) çıkabilir.
 - **LLM metni asla komut satırına girmez.** Emir argümanları yalnızca risk motorunun doğruladığı değerlerden oluşur: izinli çift, lot katına aşağı yuvarlanmış miktar, sabit emir tipi.
 - **Belirsizlik = aksiyon yok.** Hata, zaman aşımı, geçersiz JSON ve halüsinasyon belirsiz sayılır.
 - **Agent'lar opak kimlik görür** (`r-0001…`). Gerçek kayıt kimlikleri ve enjeksiyon bilgisi agent'lara gitmez.

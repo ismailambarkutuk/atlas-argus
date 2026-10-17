@@ -132,8 +132,17 @@ export function assertSafeOrderArgs(args: string[]): void {
   if (config.okxAccount === "real" && (demoCount !== 0 || args[0] !== "spot")) throw new Error("emir reddedildi: beklenmeyen argüman yapısı");
 }
 
-export async function executeDecision(decision: RiskDecision, balance: Balance | null): Promise<ExecResult> {
-  const dryRun = isDryRun();
+/**
+ * `forceDryRun`: kayıtlı (replay) veya enjekte veriden çıkan karar ASLA gönderilmez;
+ * DRY_RUN=0 olsa bile emir yalnızca hazırlanır. Gerçek emir yalnızca anlık piyasa verisinden çıkar.
+ */
+export async function executeDecision(
+  decision: RiskDecision,
+  balance: Balance | null,
+  opts: { forceDryRun?: string } = {},
+): Promise<ExecResult> {
+  const dryRun = isDryRun() || opts.forceDryRun !== undefined;
+  if (opts.forceDryRun && !isDryRun()) log.warn("EMİR", `DRY_RUN=0 ama ${opts.forceDryRun} → emir gönderilmeyecek`);
   if (!decision.approved || !decision.order) {
     const message = decision.action === "ALERT" ? "Yalnızca uyarı; emir yok" : "Risk motoru onaylamadı; emir yok";
     log.info("EMİR", message);
@@ -157,7 +166,7 @@ export async function executeDecision(decision: RiskDecision, balance: Balance |
 
   const shown = `okx ${args.join(" ")}`;
   if (dryRun) {
-    log.warn("EMİR", `DRY_RUN=1 → emir HAZIRLANDI ama GÖNDERİLMEDİ: ${shown}`);
+    log.warn("EMİR", `${opts.forceDryRun ? `${opts.forceDryRun} →` : "DRY_RUN=1 →"} emir HAZIRLANDI ama GÖNDERİLMEDİ: ${shown}`);
     return { status: "DRY_RUN", dryRun, args, message: "DRY_RUN: gönderilmedi" };
   }
 

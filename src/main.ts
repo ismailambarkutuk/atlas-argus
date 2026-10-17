@@ -136,7 +136,11 @@ async function runRound(candles: Candle[], i: number, signals: Signals, ctx: Run
     limits: limitsFromConfig(),
   });
   for (const reason of risk.reasons) log.info("RİSK", reason);
-  const exec = await executeDecision(risk, balance);
+  // Kayıtlı veya enjekte veriden gerçek emir çıkmaz
+  const injectedWindow = window.some((w) => w.injected);
+  const exec = await executeDecision(risk, balance, {
+    forceDryRun: ctx.fromReplay ? "veri kayıttan (replay)" : injectedWindow ? "pencerede ENJEKTE veri var" : undefined,
+  });
 
   if (atlas.cached || argus.cached) uncertainties.push("Agent yanıtları KAYITLI YANIT'tan oynatıldı (canlı LLM çağrısı yapılmadı)");
   if (c.injected) uncertainties.push(`Tetik mumu ENJEKTE (yapay senaryo: ${c.inject_scenario})`);
