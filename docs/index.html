@@ -1,0 +1,1576 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<script>window.AA_STATIC = true;</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ATLAS & ARGUS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  // Tema: kayıtlı tercih yoksa sistem teması
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem("aa-theme"); } catch (e) {}
+    if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+<style>
+:root {
+  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #f5f7fc; --surface: #ffffff; --surface-2: #f4f6fb; --surface-3: #eef1f8;
+  --text: #0b0e17; --muted: #586174; --faint: #8a92a4; --border: #e1e6ef; --border-2: #d3dae6;
+  --blue: #2563eb; --violet: #8b5cf6; --pink: #ec4899; --rose: #f43f5e;
+  --green: #16a34a; --green-bg: #ecfdf3; --amber: #c2410c; --amber-bg: #fff4e5; --red: #e11d48; --red-bg: #fff1f3;
+  --atlas: #2563eb; --argus: #db2777;
+  --grad: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 42%, #d946ef 70%, #f43f5e 100%);
+  --btn: linear-gradient(90deg, #2563eb, #4f46e5 60%, #7c3aed);
+  --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 12px 32px -14px rgba(37, 56, 120, .22);
+  --blob1: rgba(59, 130, 246, .16); --blob2: rgba(236, 72, 153, .10); --blob3: rgba(139, 92, 246, .10);
+  --term-bg: #0d1220; --term-fg: #d7deeb;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #060912; --surface: #0e1322; --surface-2: #121829; --surface-3: #182036;
+  --text: #f1f4fa; --muted: #a3abbe; --faint: #6d7690; --border: #20283d; --border-2: #2b3550;
+  --blue: #5b8cff; --violet: #a78bfa; --pink: #f472b6;
+  --green: #34d399; --green-bg: rgba(52, 211, 153, .10); --amber: #fbbf24; --amber-bg: rgba(251, 191, 36, .10); --red: #fb7185; --red-bg: rgba(251, 113, 133, .10);
+  --atlas: #60a5fa; --argus: #f472b6;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 16px 40px -18px rgba(0, 0, 0, .7);
+  --blob1: rgba(59, 130, 246, .16); --blob2: rgba(236, 72, 153, .10); --blob3: rgba(139, 92, 246, .12);
+  --term-bg: #070b15; --term-fg: #d7deeb;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.55 "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(700px 480px at 12% 8%, var(--blob1), transparent 70%),
+    radial-gradient(640px 520px at 92% 24%, var(--blob2), transparent 70%),
+    radial-gradient(800px 600px at 50% 110%, var(--blob3), transparent 70%);
+}
+a { color: inherit; }
+code, .mono { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+.grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ---------- Navbar ---------- */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: saturate(160%) blur(14px); -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.nav .wrap { display: flex; align-items: center; gap: 14px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; white-space: nowrap; font-weight: 800; letter-spacing: -.02em; font-size: 17px; }
+.brand-mark { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--blue); display: grid; place-items: center; }
+.brand-mark::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); animation: beat 2.4s ease-in-out infinite; }
+.brand .amp { color: var(--pink); }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+}
+.pill.blue { color: var(--blue); border-color: color-mix(in srgb, var(--blue) 35%, transparent); background: color-mix(in srgb, var(--blue) 9%, var(--surface)); }
+.pill.ok { color: var(--green); border-color: color-mix(in srgb, var(--green) 35%, transparent); background: var(--green-bg); text-decoration: none; }
+.pill.warn { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 35%, transparent); background: var(--amber-bg); }
+.pill.bad { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, transparent); background: var(--red-bg); }
+.pill.violet { color: var(--violet); border-color: color-mix(in srgb, var(--violet) 35%, transparent); background: color-mix(in srgb, var(--violet) 9%, var(--surface)); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.dot.live { animation: beat 1.6s ease-in-out infinite; }
+.nav-links { display: flex; gap: 2px; margin-left: 8px; }
+.nav-links a { text-decoration: none; white-space: nowrap; padding: 8px 9px; border-radius: 10px; font-size: 13.5px; font-weight: 500; color: var(--muted); }
+.nav-links a:hover { color: var(--text); background: var(--surface-3); }
+.nav-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.icon-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); font: 600 13px/1 var(--font); cursor: pointer; white-space: nowrap;
+}
+.icon-btn:hover { border-color: var(--border-2); }
+.icon-btn svg { width: 15px; height: 15px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap;
+  height: 44px; padding: 0 22px; border-radius: 999px; border: 0; cursor: pointer; text-decoration: none;
+  font: 700 15px/1 var(--font); color: #fff; background: var(--btn);
+  box-shadow: 0 10px 26px -10px rgba(79, 70, 229, .65); transition: transform .15s, box-shadow .15s;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 14px 30px -10px rgba(79, 70, 229, .75); }
+.btn.sm { height: 36px; padding: 0 16px; font-size: 13.5px; }
+.btn.ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.btn svg { width: 16px; height: 16px; }
+.menu-btn { display: none; }
+@media (max-width: 1320px) { .nav .hide-md { display: none; } }
+@media (max-width: 1080px) {
+  .nav-links { display: none; position: absolute; top: 64px; left: 0; right: 0; flex-direction: column; padding: 8px 16px 14px; background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--shadow); margin: 0; }
+  .nav-links.open { display: flex; }
+  .menu-btn { display: inline-flex; }
+}
+@media (max-width: 640px) {
+  .nav .hide-sm { display: none; }
+}
+
+/* ---------- Hero ---------- */
+.hero { text-align: center; padding: 64px 0 40px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 10px; padding: 7px 16px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); font-size: 13px; color: var(--muted); }
+.eyebrow b { color: var(--blue); font-weight: 600; }
+.eyebrow .sep { color: var(--faint); }
+h1.title { font-size: clamp(40px, 7.4vw, 82px); line-height: 1.02; letter-spacing: -.045em; font-weight: 800; margin: 26px auto 22px; max-width: 980px; }
+h1.title .grad-text { display: inline-block; padding-bottom: .08em; }
+.lead { font-size: clamp(16px, 2vw, 19px); color: var(--muted); max-width: 720px; margin: 0 auto; }
+.lead b { color: var(--text); }
+.promise { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 18px; margin: 28px auto 0; padding: 12px 22px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); font-size: 14.5px; color: var(--muted); }
+.promise b { color: var(--text); }
+.promise .ok { color: var(--green); font-weight: 800; }
+.promise .shield { color: var(--red); }
+.promise .mid { width: 4px; height: 4px; border-radius: 50%; background: var(--faint); }
+.cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; margin-top: 34px; }
+.stats-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-width: 920px; margin: 48px auto 0; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; text-align: left; box-shadow: var(--shadow); }
+.stat .k { font-size: 12px; color: var(--faint); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.stat .v { font-size: 17px; font-weight: 700; margin-top: 2px; }
+.stat .s { font-size: 12.5px; color: var(--muted); }
+@media (max-width: 760px) { .stats-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } .promise { border-radius: 20px; } }
+
+/* ---------- Sections ---------- */
+section { padding: 56px 0; }
+.sec-head { max-width: 760px; margin-bottom: 26px; }
+.sec-kicker { font-size: 12.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--violet); }
+.sec-head h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -.035em; line-height: 1.1; margin: 8px 0 10px; }
+.sec-head p { color: var(--muted); margin: 0; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow); }
+.card-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.card-h h3 { margin: 0; font-size: 15px; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+.card-h h3 svg { width: 17px; height: 17px; color: var(--muted); }
+.card-b { padding: 16px 18px; }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.small { font-size: 13px; }
+
+/* ---------- Lab: kontroller ---------- */
+.controls { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: start; margin-bottom: 16px; }
+.scen-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.scen {
+  text-align: left; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 16px; padding: 12px 14px; font: inherit; transition: border-color .15s, transform .15s, box-shadow .15s; box-shadow: var(--shadow); position: relative;
+}
+.scen:hover:not(:disabled) { border-color: color-mix(in srgb, var(--blue) 50%, var(--border)); transform: translateY(-1px); }
+.scen:disabled { opacity: .5; cursor: not-allowed; }
+.scen.active { border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 18%, transparent), var(--shadow); opacity: 1; }
+.scen .n { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--faint); }
+.scen .t { font-weight: 700; font-size: 14.5px; margin: 2px 0; }
+.scen .d { font-size: 12.5px; color: var(--muted); }
+.scen .tag-live { position: absolute; top: 10px; right: 12px; }
+.side-ctl { display: flex; flex-direction: column; gap: 8px; min-width: 240px; max-width: 300px; }
+.side-ctl .row { display: flex; gap: 8px; }
+select.sel { height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: 600 13px var(--font); padding: 0 10px; }
+.stop-btn { height: 36px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--red) 45%, var(--border)); background: var(--red-bg); color: var(--red); font: 700 13px var(--font); padding: 0 14px; cursor: pointer; flex: 1; }
+.stop-btn:disabled { opacity: .45; cursor: not-allowed; }
+.kill-btn { height: 36px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: 700 13px var(--font); padding: 0 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+.kill-btn.on { background: var(--red); color: #fff; border-color: var(--red); }
+.status-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+@media (max-width: 960px) { .controls { grid-template-columns: 1fr; } .scen-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .scen-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Koşu başlığı ---------- */
+.run-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 18px; }
+.run-title { font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.run-cmd { font-size: 12.5px; color: var(--muted); word-break: break-all; }
+.labels { display: flex; flex-wrap: wrap; gap: 6px; }
+.lbl { padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; letter-spacing: .04em; border: 1.5px solid currentColor; animation: pop .35s ease; }
+.lbl.inj { color: var(--amber); } .lbl.cached { color: var(--violet); } .lbl.dry { color: var(--blue); } .lbl.mock { color: var(--faint); } .lbl.live { color: var(--green); }
+
+/* ---------- Akış hattı ---------- */
+.rail { display: flex; align-items: stretch; gap: 0; padding: 18px; overflow-x: auto; }
+.node {
+  flex: 1 1 0; min-width: 104px; border: 1px solid var(--border); border-radius: 16px; padding: 12px 10px; text-align: center;
+  background: var(--surface-2); position: relative; transition: border-color .3s, background .3s, box-shadow .3s, opacity .3s;
+}
+.node .ic { width: 36px; height: 36px; margin: 0 auto 6px; border-radius: 12px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--muted); transition: all .3s; }
+.node .ic svg { width: 18px; height: 18px; }
+.node .nm { font-weight: 700; font-size: 13px; white-space: nowrap; }
+.node .st { font-size: 11.5px; color: var(--faint); min-height: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.node[data-s="active"] { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 7%, var(--surface)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 14%, transparent); }
+.node[data-s="active"] .ic { color: #fff; background: var(--btn); border-color: transparent; animation: glow 1.4s ease-in-out infinite; }
+.node[data-s="active"] .st { color: var(--blue); }
+.node[data-s="done"] .ic { color: var(--green); border-color: color-mix(in srgb, var(--green) 40%, transparent); background: var(--green-bg); }
+.node[data-s="done"] .st { color: var(--green); }
+.node[data-s="skip"] { opacity: .45; }
+.node[data-s="fail"] { border-color: var(--red); }
+.node[data-s="fail"] .ic { color: var(--red); background: var(--red-bg); border-color: color-mix(in srgb, var(--red) 40%, transparent); }
+.node[data-s="fail"] .st { color: var(--red); }
+.node.dual .nm span:first-child { color: var(--atlas); } .node.dual .nm span:last-child { color: var(--argus); }
+.conn { flex: 0 0 22px; align-self: center; height: 3px; border-radius: 3px; background: var(--border); position: relative; overflow: hidden; }
+.conn.flow { background: color-mix(in srgb, var(--blue) 25%, var(--border)); }
+.conn.flow::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--blue), transparent); animation: flow 1s linear infinite; }
+.conn.done { background: color-mix(in srgb, var(--green) 55%, transparent); }
+
+/* ---------- Lab ızgarası ---------- */
+.lab-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+.lab-grid .full { grid-column: 1 / -1; }
+@media (max-width: 980px) { .lab-grid { grid-template-columns: 1fr; } }
+
+/* Grafik */
+.chart-box { position: relative; padding: 8px 12px 4px; }
+.chart-box svg { width: 100%; height: auto; display: block; }
+.chart-empty { padding: 60px 16px; text-align: center; color: var(--faint); font-size: 14px; }
+.cdl { animation: rise .45s ease both; animation-delay: var(--d); transform-box: fill-box; transform-origin: bottom; }
+.cdl .w { stroke-width: 1.2; }
+.up { fill: var(--green); stroke: var(--green); } .down { fill: var(--red); stroke: var(--red); } .inj { fill: var(--amber); stroke: var(--amber); }
+.vol { opacity: .35; }
+.vol.inj { opacity: .85; }
+.grid-l { stroke: var(--border); stroke-dasharray: 3 4; }
+.axis-t { fill: var(--faint); font: 10px "JetBrains Mono", monospace; }
+.trig-l { stroke: var(--violet); stroke-dasharray: 4 3; stroke-width: 1.2; }
+.trig-t { fill: var(--violet); font: 700 10px "Plus Jakarta Sans", sans-serif; }
+.inj-t { fill: var(--amber); font: 700 10px "Plus Jakarta Sans", sans-serif; }
+.ev { animation: pop .4s ease both; }
+.ev.ATLAS { fill: var(--atlas); } .ev.ARGUS { fill: var(--argus); }
+.scan { fill: url(#scanGrad); opacity: 0; }
+.scanning .scan { opacity: 1; animation: scan 2.2s ease-in-out infinite; }
+.chart-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); padding: 0 18px 12px; }
+.chart-meta i { font-style: normal; display: inline-flex; align-items: center; gap: 5px; }
+.chart-meta i::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+
+/* z göstergeleri */
+.gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 18px 16px; }
+.gauge .gl { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; }
+.gauge .gl b { font-family: "JetBrains Mono", monospace; font-size: 13px; }
+.gbar { position: relative; height: 10px; border-radius: 99px; background: var(--surface-3); overflow: visible; }
+.gfill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--blue); width: 0; transition: width .9s cubic-bezier(.2, .8, .2, 1), background .3s; }
+.gfill.trig { background: linear-gradient(90deg, var(--blue), var(--violet)); }
+.gfill.conf { background: var(--grad); }
+.gmark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text); opacity: .35; }
+.gmark span { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--faint); white-space: nowrap; }
+.gauge .gs { height: 16px; }
+.trig-flash { display: none; margin: 0 18px 14px; padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+.trig-flash.on { display: block; animation: pop .35s ease; }
+.trig-flash.t { background: color-mix(in srgb, var(--violet) 12%, var(--surface)); color: var(--violet); }
+.trig-flash.n { background: var(--green-bg); color: var(--green); }
+.pulse-strip { display: none; gap: 6px; flex-wrap: wrap; padding: 0 18px 16px; }
+.pulse-strip.on { display: flex; }
+.pchip { font-size: 11.5px; padding: 4px 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); font-family: "JetBrains Mono", monospace; animation: pop .3s ease; }
+.pchip.t { border-color: var(--violet); color: var(--violet); }
+.pchip.next { border-style: dashed; color: var(--faint); }
+
+/* Agent kartları */
+.agents { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+@media (max-width: 560px) { .agents { grid-template-columns: 1fr; } }
+.agent { border: 1px solid var(--border); border-radius: 16px; background: var(--surface-2); padding: 14px; position: relative; overflow: hidden; min-height: 250px; display: flex; flex-direction: column; }
+.agent::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--c); opacity: .9; }
+#agent-ATLAS { --c: var(--atlas); } #agent-ARGUS { --c: var(--argus); }
+.agent-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.agent-name { font-weight: 800; letter-spacing: .02em; color: var(--c); font-size: 16px; }
+.agent-model { font-size: 11.5px; color: var(--faint); font-family: "JetBrains Mono", monospace; word-break: break-all; }
+.agent-state { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 99px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
+.agent[data-s="thinking"] .agent-state { color: var(--c); border-color: var(--c); }
+.agent[data-s="sealed"] .agent-state { color: var(--violet); border-color: var(--violet); }
+.agent[data-s="revealed"] .agent-state { color: var(--green); border-color: var(--green); }
+.agent[data-s="invalid"] .agent-state { color: var(--red); border-color: var(--red); }
+.agent-body { position: relative; flex: 1; margin-top: 12px; }
+.idle-msg, .thinking, .finding, .invalid-msg { display: none; }
+.agent[data-s="idle"] .idle-msg { display: block; }
+.agent[data-s="thinking"] .thinking { display: block; }
+.agent[data-s="sealed"] .finding, .agent[data-s="revealed"] .finding { display: block; }
+.agent[data-s="invalid"] .invalid-msg { display: block; }
+.idle-msg { color: var(--faint); font-size: 13px; }
+.thinking .bars { display: grid; gap: 7px; margin: 6px 0 12px; }
+.thinking .bars i { display: block; height: 9px; border-radius: 6px; background: linear-gradient(90deg, var(--surface-3) 0%, color-mix(in srgb, var(--c) 30%, var(--surface-3)) 50%, var(--surface-3) 100%); background-size: 200% 100%; animation: shimmer 1.3s linear infinite; }
+.thinking .bars i:nth-child(2) { width: 82%; animation-delay: .15s; } .thinking .bars i:nth-child(3) { width: 64%; animation-delay: .3s; }
+.thinking p { margin: 0; font-size: 12.5px; color: var(--muted); }
+.finding { transition: filter .8s ease, opacity .8s ease; }
+.agent[data-s="sealed"] .finding { filter: blur(7px); opacity: .55; user-select: none; }
+.seal-over { position: absolute; inset: 0; display: none; place-items: center; text-align: center; }
+.agent[data-s="sealed"] .seal-over { display: grid; animation: pop .35s ease; }
+.seal-over .lock { width: 52px; height: 52px; border-radius: 16px; margin: 0 auto 8px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--violet), var(--pink)); box-shadow: 0 10px 24px -8px rgba(139, 92, 246, .6); }
+.seal-over .lock svg { width: 24px; height: 24px; }
+.seal-over b { display: block; font-size: 13.5px; }
+.seal-over small { color: var(--muted); font-size: 12px; }
+.f-type { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 10px; }
+.chip { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; background: var(--surface); border: 1px solid var(--border); }
+.chip.drop { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); background: var(--red-bg); }
+.chip.spike { color: var(--green); border-color: color-mix(in srgb, var(--green) 40%, transparent); background: var(--green-bg); }
+.chip.vol { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 40%, transparent); background: var(--amber-bg); }
+.chip.none { color: var(--muted); }
+.meter { margin: 7px 0; }
+.meter .ml { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.meter .ml b { color: var(--text); font-family: "JetBrains Mono", monospace; }
+.meter .mb { height: 7px; border-radius: 9px; background: var(--surface-3); overflow: hidden; }
+.meter .mb i { display: block; height: 100%; width: 0; border-radius: 9px; background: var(--c); transition: width 1s cubic-bezier(.2, .8, .2, 1); }
+.f-exp { font-size: 13px; color: var(--muted); margin: 10px 0 6px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.f-ev { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 4px; }
+.f-ev li { font-size: 11.5px; color: var(--muted); }
+.f-ev code { font-size: 10.5px; padding: 1px 5px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+.f-prev { font-size: 11.5px; color: var(--faint); margin-top: 8px; }
+.dispute-note { display: none; margin-top: 10px; padding: 8px 10px; border-radius: 10px; font-size: 12px; background: var(--amber-bg); color: var(--amber); font-weight: 600; }
+.agent.dispute .dispute-note { display: block; animation: pop .35s ease; }
+.invalid-msg { color: var(--red); font-size: 13px; }
+.agents-foot { padding: 0 16px 14px; font-size: 12px; color: var(--faint); }
+
+/* Mühür */
+.seal-list { display: grid; gap: 8px; }
+.seal-group-t { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--faint); margin: 6px 0 2px; }
+.srow { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); animation: pop .3s ease; }
+.srow .si { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--faint); }
+.srow .si svg { width: 15px; height: 15px; }
+.srow .sn { font-size: 13px; font-weight: 700; }
+.srow .sh { font-size: 11px; color: var(--faint); font-family: "JetBrains Mono", monospace; word-break: break-all; }
+.srow a, .srow .loc { font-size: 12px; font-weight: 700; color: var(--blue); text-decoration: none; white-space: nowrap; }
+.srow .loc { color: var(--faint); font-weight: 600; }
+.srow[data-s="pending"] .si { animation: glow 1.4s ease-in-out infinite; color: var(--violet); }
+.srow[data-s="ok"] .si { color: var(--green); background: var(--green-bg); border-color: color-mix(in srgb, var(--green) 40%, transparent); }
+.srow[data-s="fail"] .si { color: var(--red); background: var(--red-bg); }
+.seal-empty { color: var(--faint); font-size: 13px; }
+.seal-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+/* Karşılaştırma */
+.level-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.level {
+  font-size: 26px; font-weight: 800; letter-spacing: -.02em; padding: 10px 20px; border-radius: 16px; border: 2px dashed var(--border-2); color: var(--faint); min-width: 170px; text-align: center;
+}
+.level.YUKSEK { color: var(--green); border: 2px solid var(--green); background: var(--green-bg); animation: stamp .5s cubic-bezier(.2, 1.4, .4, 1); }
+.level.ORTA { color: var(--amber); border: 2px solid var(--amber); background: var(--amber-bg); animation: stamp .5s cubic-bezier(.2, 1.4, .4, 1); }
+.level.BELIRSIZ { color: var(--red); border: 2px solid var(--red); background: var(--red-bg); animation: stamp .5s cubic-bezier(.2, 1.4, .4, 1); }
+.level-sub { font-size: 13px; color: var(--muted); max-width: 320px; }
+.checks { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 6px; }
+.checks li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
+.checks .ck { flex: none; width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center; font-size: 11px; font-weight: 800; margin-top: 1px; }
+.ck.y { background: var(--green-bg); color: var(--green); } .ck.n { background: var(--red-bg); color: var(--red); } .ck.q { background: var(--surface-3); color: var(--faint); }
+.reasons { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 5px; }
+.reasons li { font-size: 12.5px; color: var(--muted); padding-left: 14px; position: relative; animation: pop .3s ease; }
+.reasons li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--border-2); }
+.reasons li.warn { color: var(--amber); } .reasons li.err { color: var(--red); } .reasons li.ok { color: var(--green); }
+
+/* Risk ve emir */
+.nollm { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 99px; background: var(--surface-3); color: var(--text); letter-spacing: .03em; }
+.limits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lim { border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; background: var(--surface-2); }
+.lim .k { font-size: 11px; color: var(--faint); font-weight: 600; }
+.lim .v { font-weight: 800; font-size: 15px; }
+.order { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--term-bg); color: var(--term-fg); font-size: 12px; word-break: break-all; display: none; }
+.order.on { display: block; animation: pop .3s ease; }
+.order .p { color: #7dd3fc; }
+.exec { margin-top: 12px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); }
+.exec .ei { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--surface-3); color: var(--faint); }
+.exec .ei svg { width: 19px; height: 19px; }
+.exec b { display: block; font-size: 14.5px; }
+.exec small { color: var(--muted); font-size: 12.5px; }
+.exec.ok { border-color: color-mix(in srgb, var(--green) 45%, transparent); background: var(--green-bg); } .exec.ok .ei { background: var(--green); color: #fff; }
+.exec.dry { border-color: color-mix(in srgb, var(--blue) 45%, transparent); background: color-mix(in srgb, var(--blue) 8%, var(--surface)); } .exec.dry .ei { background: var(--blue); color: #fff; }
+.exec.none { border-color: var(--border-2); } .exec.none .ei { background: var(--surface-3); color: var(--muted); }
+.exec.bad { border-color: color-mix(in srgb, var(--red) 45%, transparent); background: var(--red-bg); } .exec.bad .ei { background: var(--red); color: #fff; }
+.exec.alert { border-color: color-mix(in srgb, var(--amber) 45%, transparent); background: var(--amber-bg); } .exec.alert .ei { background: var(--amber); color: #fff; }
+.exec.anim { animation: stamp .5s cubic-bezier(.2, 1.4, .4, 1); }
+
+/* Karar bandı */
+.verdict { display: none; margin-top: 16px; padding: 18px 22px; border-radius: 20px; color: #fff; align-items: center; gap: 16px; box-shadow: var(--shadow); }
+.verdict.on { display: flex; animation: pop .45s ease; }
+.verdict .vi { width: 46px; height: 46px; border-radius: 14px; background: rgba(255, 255, 255, .18); display: grid; place-items: center; flex: none; }
+.verdict .vi svg { width: 24px; height: 24px; }
+.verdict b { font-size: 19px; display: block; letter-spacing: -.01em; }
+.verdict span { opacity: .9; font-size: 14px; }
+.verdict.act { background: linear-gradient(90deg, #2563eb, #7c3aed); }
+.verdict.hold { background: linear-gradient(90deg, #334155, #475569); }
+.verdict.kill { background: linear-gradient(90deg, #be123c, #e11d48); }
+.verdict.alert { background: linear-gradient(90deg, #b45309, #d97706); }
+.verdict.calm { background: linear-gradient(90deg, #047857, #059669); }
+
+/* Terminal */
+.term { background: var(--term-bg); color: var(--term-fg); border-radius: 0 0 20px 20px; height: 300px; overflow-y: auto; padding: 12px 14px; font: 12px/1.6 "JetBrains Mono", Consolas, monospace; }
+.term .l { white-space: pre-wrap; word-break: break-word; animation: fadein .25s ease; }
+.term .tm { color: #64748b; }
+.term .tg { font-weight: 600; }
+.term .stage .tg { color: #22d3ee; } .term .info .tg { color: #60a5fa; } .term .ok .tg { color: #4ade80; } .term .warn .tg { color: #fbbf24; } .term .error .tg { color: #fb7185; } .term .agent .tg { color: #e879f9; }
+.term .banner { color: #e2e8f0; font-weight: 600; }
+.term a { color: #93c5fd; }
+.term .empty { color: #64748b; }
+
+/* Bölümler */
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.step { padding: 18px; }
+.step .num { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; font-weight: 800; font-size: 13px; color: #fff; background: var(--btn); margin-bottom: 10px; }
+.step h4 { margin: 0 0 6px; font-size: 15.5px; }
+.step p { margin: 0; font-size: 13.5px; color: var(--muted); }
+@media (max-width: 960px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .steps { grid-template-columns: 1fr; } }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+table.t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.t th, table.t td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+table.t th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 700; }
+table.t tr:last-child td { border-bottom: 0; }
+.tbl-wrap { overflow-x: auto; }
+.callout { padding: 14px 16px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--violet) 35%, transparent); background: color-mix(in srgb, var(--violet) 7%, var(--surface)); font-size: 14px; }
+.callout b { color: var(--violet); }
+.addr { font-family: "JetBrains Mono", monospace; font-size: 13px; word-break: break-all; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13.5px; }
+.kv dt { color: var(--faint); } .kv dd { margin: 0; word-break: break-all; }
+.seal-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.seal-steps div { padding: 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); font-size: 13px; }
+.seal-steps b { display: block; font-size: 14px; margin-bottom: 2px; }
+@media (max-width: 560px) { .seal-steps { grid-template-columns: 1fr; } .limits { grid-template-columns: 1fr 1fr; } .gauges { grid-template-columns: 1fr; } }
+.hist { display: grid; gap: 8px; }
+.hrow { display: grid; grid-template-columns: 110px 1fr auto auto; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; text-align: left; font: inherit; color: inherit; width: 100%; transition: border-color .15s; }
+.hrow:hover { border-color: var(--blue); }
+.hrow .ht { font-size: 12.5px; color: var(--muted); font-family: "JetBrains Mono", monospace; }
+.hrow .hid { font-size: 13px; font-weight: 600; word-break: break-all; }
+.hrow .hl { display: flex; gap: 4px; flex-wrap: wrap; }
+.hrow .hl span { font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 99px; border: 1px solid currentColor; }
+.lv { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 99px; white-space: nowrap; }
+.lv.YUKSEK { color: var(--green); background: var(--green-bg); } .lv.ORTA { color: var(--amber); background: var(--amber-bg); } .lv.BELIRSIZ { color: var(--red); background: var(--red-bg); }
+@media (max-width: 640px) { .hrow { grid-template-columns: 1fr auto; } .hrow .ht, .hrow .hl { display: none; } }
+footer { padding: 36px 0 48px; border-top: 1px solid var(--border); margin-top: 24px; color: var(--muted); font-size: 13.5px; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; transition: all .25s; z-index: 100; pointer-events: none; max-width: calc(100% - 32px); }
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Animasyonlar */
+@keyframes beat { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.65); opacity: .6; } }
+@keyframes glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, .45); } 50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); } }
+@keyframes flow { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes stamp { 0% { transform: scale(1.35); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes rise { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+@keyframes scan { 0% { transform: translateX(0); } 50% { transform: translateX(560px); } 100% { transform: translateX(0); } }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- SVG simgeler -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+  <symbol id="i-act" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-brain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="5"/><circle cx="16" cy="12" r="5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 21h14M6 7h12M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v9M6.4 6.4a8 8 0 1 0 11.2 0"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6M12 19h8"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18M8 14v3M12 9v8M16 12v5M20 6v11"/></symbol>
+</svg>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="brand-mark"></span><span>ATLAS <span class="amp">&amp;</span> ARGUS</span></a>
+    <span class="pill blue hide-md">Avalanche × OKX</span>
+    <div class="nav-links" id="navLinks">
+      <a href="#mimari">Mimari</a>
+      <a href="#lab">Canlı Konsensüs</a>
+      <a href="#risk">Risk Motoru</a>
+      <a href="#muhur">Fuji Mühür</a>
+      <a href="#degerlendirme">Değerlendirme</a>
+      <a href="#gecmis">Geçmiş Turlar</a>
+    </div>
+    <div class="nav-right">
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Temayı değiştir"><svg><use href="#i-sun"/></svg><span>Açık</span></button>
+      <a class="pill ok hide-sm" id="verifiedPill" href="#muhur" target="_blank" rel="noopener"><span class="dot"></span>Fuji doğrulandı</a>
+      <a class="btn sm hide-sm" href="#lab">Canlı Demo</a>
+      <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Menü"><svg><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="eyebrow"><span style="color:var(--violet)">✦</span><b>Otonom Piyasa Koruması</b><span class="sep">/</span><span>İki bağımsız LLM + Fuji mührü</span></div>
+    <h1 class="title">Kripto varlıklarını<br><span class="grad-text">sen uyurken korur.</span></h1>
+    <p class="lead">Klasik botlar kör sinyal üretir ve halüsinasyonu gizler. <b>ATLAS &amp; ARGUS</b>, aynı piyasa hareketini birbirinden habersiz değerlendiren iki ayrı yapay zekâyı eşleştirir. İkisi de bulgusunu Avalanche'ta mühürler; uyuşurlarsa kodla sınırlanmış bir koruma devreye girer. <b>Emin değilse hiçbir şey yapmaz.</b></p>
+    <div class="promise">
+      <span><span class="ok">✓</span> <b>Emin olduğunda:</b> kodla sınırlanmış kısmi satış</span>
+      <span class="mid"></span>
+      <span><span class="shield">⛉</span> <b>Emin olmadığında:</b> işlem yok, kumar yok</span>
+    </div>
+    <div class="cta">
+      <a class="btn" href="#lab">Canlı konsensüsü izle <svg><use href="#i-arrow"/></svg></a>
+      <a class="btn ghost" href="#mimari">Akış nasıl çalışır</a>
+    </div>
+    <div class="stats-strip" id="heroStats">
+      <div class="stat"><div class="k">ATLAS</div><div class="v" id="hsAtlas">—</div><div class="s" id="hsAtlasM">&nbsp;</div></div>
+      <div class="stat"><div class="k">ARGUS</div><div class="v" id="hsArgus">—</div><div class="s" id="hsArgusM">&nbsp;</div></div>
+      <div class="stat"><div class="k">Risk motorunda LLM</div><div class="v">0</div><div class="s">saf, deterministik TypeScript</div></div>
+      <div class="stat"><div class="k">Bütçe tavanı</div><div class="v" id="hsBudget">—</div><div class="s" id="hsBudgetS">&nbsp;</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="mimari">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Mimari</div>
+      <h2>Veriden emre sekiz adım, her biri denetlenebilir</h2>
+      <p>LLM yalnızca yorum yapar. Tetiği istatistik, kararı kural, aksiyonu risk motoru verir.</p>
+    </div>
+    <div class="steps">
+      <div class="card step"><div class="num">1</div><h4>Veri</h4><p>OKX Agent Trade Kit ile yalnızca <b>kapanmış</b> 1 dakikalık mumlar alınır. Her kaydın kimliği vardır.</p></div>
+      <div class="card step"><div class="num">2</div><h4>Robust z tetiği</h4><p>LLM'siz istatistik: medyan ve MAD. Her mumda LLM çağrılmaz, yalnızca olağandışı harekette çağrılır.</p></div>
+      <div class="card step"><div class="num">3</div><h4>ATLAS ∥ ARGUS</h4><p>Farklı sağlayıcılardan iki model, aynı ham 60 mumu paralel ve birbirinden habersiz inceler.</p></div>
+      <div class="card step"><div class="num">4</div><h4>Fuji mührü</h4><p>Önce iki bulgunun hash'i commit edilir, sonra reveal. Kontrat hash'i zincirde yeniden hesaplar.</p></div>
+      <div class="card step"><div class="num">5</div><h4>Karşılaştırma</h4><p>Örtüşme, uyum beyanı ve istatistik onayıyla Yüksek, Orta ya da Belirsiz. Ayrışmada tek uyuşmazlık turu yapılır.</p></div>
+      <div class="card step"><div class="num">6</div><h4>Risk motoru</h4><p>LLM yok. Bütçe, işlem başı limit, günlük zarar, izinli çift, lot yuvarlama ve kill switch.</p></div>
+      <div class="card step"><div class="num">7</div><h4>Emir</h4><p>ATK ile <code>spot place</code>. DRY_RUN varsayılan; kayıtlı ya da enjekte veriden asla gerçek emir çıkmaz.</p></div>
+      <div class="card step"><div class="num">8</div><h4>Rapor</h4><p>Kanıtlar, belirsizlikler, ENJEKTE ve KAYITLI YANIT etiketleri, Snowtrace linkleri.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="lab">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Canlı Konsensüs Laboratuvarı</div>
+      <h2>Agent'ların karar verişini adım adım izle</h2>
+      <p>Bir senaryo seç. Sistem gerçekten çalışır; bu sayfa onun loglarını canlı okur ve her aşamayı gösterir.</p>
+    </div>
+
+    <div class="controls">
+      <div class="scen-grid" id="scenGrid">
+        <button class="scen" data-sc="drop" type="button"><div class="n">Senaryo 1</div><div class="t">Düşüş · iki agent örtüşüyor</div><div class="d">Enjekte düşüş, kayıtlı yanıtlar → azaltma emri (DRY_RUN)</div></button>
+        <button class="scen" data-sc="diverge" type="button"><div class="n">Senaryo 2</div><div class="t">Ayrışma · uyuşmazlık turu</div><div class="d">Yoruma açık fitil → belirsiz, işlem yok</div></button>
+        <button class="scen" data-sc="kill" type="button"><div class="n">Senaryo 3</div><div class="t">Kill switch açık</div><div class="d">Agent'lar emin olsa bile hiçbir emir gitmez</div></button>
+        <button class="scen" data-sc="drop-live" type="button"><span class="pill violet tag-live">LLM</span><div class="n">Canlı LLM</div><div class="t">Enjekte düşüş · gerçek çağrı</div><div class="d">Gemini ve Groq şimdi çağrılır; emir yine gönderilmez</div></button>
+        <button class="scen" data-sc="live" type="button"><span class="pill ok tag-live"><span class="dot live"></span>OKX</span><div class="n">Anlık piyasa</div><div class="t">Tek tur</div><div class="d">Son 300 mum; tetik yoksa LLM çağrılmaz</div></button>
+        <button class="scen" data-sc="watch" type="button"><span class="pill ok tag-live"><span class="dot live"></span>OKX</span><div class="n">Sürekli izleme</div><div class="t">Her dakika kontrol</div><div class="d">Bekleme süresi ve tur tavanıyla otonom çalışır</div></button>
+      </div>
+      <div class="side-ctl">
+        <div class="row">
+          <select class="sel" id="symSel" aria-label="Çift"><option>BTC-USDT</option></select>
+          <button class="stop-btn" id="stopBtn" type="button" disabled>■ Durdur</button>
+        </div>
+        <button class="kill-btn" id="killBtn" type="button"><svg width="15" height="15"><use href="#i-power"/></svg><span>Kill switch: kapalı</span></button>
+        <div class="small faint" id="sideNote">Sistem bağlantısı kuruluyor…</div>
+      </div>
+    </div>
+
+    <div class="status-row" id="statusRow"></div>
+
+    <div class="card">
+      <div class="run-head">
+        <div>
+          <div class="run-title" id="runTitle"><span class="dot" style="color:var(--faint)"></span>Hazır · bir senaryo seç</div>
+          <div class="run-cmd mono" id="runCmd"></div>
+        </div>
+        <div class="labels" id="labels"></div>
+      </div>
+      <div class="rail" id="rail">
+        <div class="node" data-st="data"><div class="ic"><svg><use href="#i-db"/></svg></div><div class="nm">Veri</div><div class="st"></div></div>
+        <div class="conn" data-c="data"></div>
+        <div class="node" data-st="stats"><div class="ic"><svg><use href="#i-act"/></svg></div><div class="nm">Robust z</div><div class="st"></div></div>
+        <div class="conn" data-c="stats"></div>
+        <div class="node dual" data-st="agents"><div class="ic"><svg><use href="#i-brain"/></svg></div><div class="nm"><span>ATLAS</span> ∥ <span>ARGUS</span></div><div class="st"></div></div>
+        <div class="conn" data-c="agents"></div>
+        <div class="node" data-st="seal"><div class="ic"><svg><use href="#i-lock"/></svg></div><div class="nm">Mühür</div><div class="st"></div></div>
+        <div class="conn" data-c="seal"></div>
+        <div class="node" data-st="compare"><div class="ic"><svg><use href="#i-scale"/></svg></div><div class="nm">Karşılaştırma</div><div class="st"></div></div>
+        <div class="conn" data-c="compare"></div>
+        <div class="node" data-st="risk"><div class="ic"><svg><use href="#i-shield"/></svg></div><div class="nm">Risk motoru</div><div class="st"></div></div>
+        <div class="conn" data-c="risk"></div>
+        <div class="node" data-st="order"><div class="ic"><svg><use href="#i-send"/></svg></div><div class="nm">Emir</div><div class="st"></div></div>
+        <div class="conn" data-c="order"></div>
+        <div class="node" data-st="report"><div class="ic"><svg><use href="#i-file"/></svg></div><div class="nm">Rapor</div><div class="st"></div></div>
+      </div>
+    </div>
+
+    <div class="verdict" id="verdict"><div class="vi"><svg><use href="#i-shield"/></svg></div><div><b></b><span></span></div></div>
+
+    <div class="lab-grid">
+      <div class="card">
+        <div class="card-h"><h3><svg><use href="#i-chart"/></svg>Ham pencere · <span id="chartSym">60 mum</span></h3><span class="small faint mono" id="chartFile"></span></div>
+        <div class="chart-box" id="chart"><div class="chart-empty">Senaryo başlayınca agent'lara giden 60 mumluk ham pencere burada çizilir.</div></div>
+        <div class="chart-meta"><i style="--c:var(--amber)">ENJEKTE mum</i><i style="--c:var(--violet)">tetik mumu</i><i style="--c:var(--atlas)">ATLAS kanıtı</i><i style="--c:var(--argus)">ARGUS kanıtı</i></div>
+        <div class="gauges">
+          <div class="gauge"><div class="gl"><span>Fiyat getirisi · robust |z|</span><b id="gzP">—</b></div><div class="gbar" id="gbP"><div class="gfill"></div></div><div class="gs"></div></div>
+          <div class="gauge"><div class="gl"><span>Hacim · robust z</span><b id="gzV">—</b></div><div class="gbar" id="gbV"><div class="gfill"></div></div><div class="gs"></div></div>
+        </div>
+        <div class="trig-flash" id="trigFlash"></div>
+        <div class="pulse-strip" id="pulse"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h3><svg><use href="#i-brain"/></svg>Bağımsız analizler</h3><span class="small faint">aynı ham veri · birbirinden habersiz</span></div>
+        <div class="agents">
+          <article class="agent" id="agent-ATLAS" data-s="idle"></article>
+          <article class="agent" id="agent-ARGUS" data-s="idle"></article>
+        </div>
+        <div class="agents-foot">Hazır istatistik değerleri agent'lara verilmez. Kimlikler opaktır (r-0001…), enjekte bilgisi gizlidir. "Uyum beyanı" modelin kendi beyanıdır, doğruluk olasılığı değildir.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h3><svg><use href="#i-lock"/></svg>Commit → reveal mührü</h3><span class="small faint" id="sealProv"></span></div>
+        <div class="card-b">
+          <div class="seal-list" id="sealList"><div class="seal-empty">İki bulgu da hazır olunca hash'leri önce commit edilir; ikisi de zincire yazılınca reveal edilir.</div></div>
+          <div class="seal-note">Mühür, bir agent'ın diğerinin cevabını gördükten sonra fikrini değiştirmediğini kanıtlar. ARGUS'un ATLAS'ı görmediğini ise kod yapısı sağlar.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h3><svg><use href="#i-scale"/></svg>Karşılaştırma</h3><span class="small faint">kural tabanlı · LLM yok</span></div>
+        <div class="card-b">
+          <div class="level-wrap"><div class="level" id="level">—</div><div class="level-sub" id="levelSub">Örtüşme = anomaly, type ve direction aynı. Yüksek için ayrıca iki uyum beyanı ≥ 0.7 ve istatistik onayı gerekir.</div></div>
+          <ul class="checks" id="checks"></ul>
+          <ul class="reasons" id="cmpReasons"></ul>
+        </div>
+      </div>
+
+      <div class="card full">
+        <div class="card-h"><h3><svg><use href="#i-shield"/></svg>Risk motoru ve emir</h3><span class="nollm">⚙ LLM YOK · saf TypeScript</span></div>
+        <div class="card-b two">
+          <div>
+            <div class="limits" id="limits"></div>
+            <ul class="reasons" id="riskReasons"></ul>
+          </div>
+          <div>
+            <div class="exec none" id="exec"><div class="ei"><svg><use href="#i-pause"/></svg></div><div><b>Bekliyor</b><small>Risk motoru onaylamadan hiçbir emir hazırlanmaz.</small></div></div>
+            <div class="order mono" id="order"></div>
+            <ul class="reasons" id="uncert"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card full">
+        <div class="card-h"><h3><svg><use href="#i-term"/></svg>Sistem logu (canlı)</h3>
+          <label class="small muted" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="autoScroll" checked> otomatik kaydır</label></div>
+        <div class="term" id="term"><div class="empty">Loglar burada akar. Jüri ekranında ne görünüyorsa terminalde de aynısı yazar.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="risk">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Risk Motoru</div>
+      <h2>Aksiyonu agent'lar değil, kod onaylar</h2>
+      <p><code>src/risk.ts</code> saf ve deterministiktir. LLM metni asla komut satırına girmez; emir argümanları yalnızca doğrulanmış değerlerden kurulur.</p>
+    </div>
+    <div class="two">
+      <div class="card">
+        <div class="card-h"><h3>Aksiyon tablosu</h3></div>
+        <div class="tbl-wrap"><table class="t">
+          <tr><th>Bulgu</th><th>Uyum</th><th>Aksiyon</th></tr>
+          <tr><td>price_drop</td><td><span class="lv YUKSEK">Yüksek</span></td><td>Varlığın limit dahilinde bir kısmını sat</td></tr>
+          <tr><td>price_drop</td><td><span class="lv ORTA">Orta</span></td><td>Aynısı, yarım boyutla</td></tr>
+          <tr><td>price_drop</td><td><span class="lv BELIRSIZ">Belirsiz</span></td><td>Yok</td></tr>
+          <tr><td>price_spike</td><td>herhangi</td><td>Yalnızca uyarı</td></tr>
+          <tr><td>volume_spike</td><td>herhangi</td><td>Yalnızca uyarı</td></tr>
+          <tr><td>none</td><td>—</td><td>Yok</td></tr>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Kodla çizilen sınırlar</h3><span class="small faint">.env'den okunur</span></div>
+        <div class="card-b">
+          <div class="limits" id="limits2"></div>
+          <ul class="reasons" style="margin-top:14px">
+            <li>Azaltma emri eldeki bakiyeyi aşamaz; bakiye önce borsadan okunur.</li>
+            <li>Miktar lot katına aşağı yuvarlanır, borsanın minimum miktarı kontrol edilir.</li>
+            <li>Kill switch: <code>KILL_SWITCH=1</code> ya da proje kökünde <code>KILL</code> dosyası varsa hiçbir emir gitmez.</li>
+            <li>API izni yalnızca okuma ve işlem; para çekme izni yok. Ana hesap anahtarı kullanılmaz.</li>
+            <li>Hata, zaman aşımı veya geçersiz JSON = belirsiz = işlem yok.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="muhur">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Avalanche Fuji Mührü</div>
+      <h2>Fikir değiştirmedikleri zincirde kanıtlı</h2>
+      <p>İki agent'ın bulgusu karşılaştırılmadan önce Avalanche Fuji'deki <b>AtlasArgusSeal</b> kontratına mühürlenir.</p>
+    </div>
+    <div class="two">
+      <div class="card">
+        <div class="card-h"><h3>AtlasArgusSeal</h3><a class="pill ok" id="codePill" href="#" target="_blank" rel="noopener"><span class="dot"></span>Kaynak kodu doğrulandı</a></div>
+        <div class="card-b">
+          <div class="addr" id="cAddr">—</div>
+          <dl class="kv" style="margin-top:12px">
+            <dt>Ağ</dt><dd>Avalanche Fuji C-Chain (43113)</dd>
+            <dt>Derleyici</dt><dd id="cComp">—</dd>
+            <dt>Deploy</dt><dd><a id="cTx" href="#" target="_blank" rel="noopener">—</a></dd>
+            <dt>Mühür</dt><dd id="cProv">—</dd>
+          </dl>
+          <div class="seal-steps">
+            <div><b>1 · Commit</b>keccak256(bulgu + rastgele 32 bayt salt) zincire yazılır.</div>
+            <div><b>2 · Reveal</b>İki commit de tamamlanınca bulgu ve salt açıklanır.</div>
+            <div><b>3 · Doğrulama</b>Kontrat hash'i yeniden hesaplar; değiştirilmiş bulguyu reddeder.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Kanıtın sınırı</h3></div>
+        <div class="card-b">
+          <div class="callout"><b>Mühür neyi kanıtlar:</b> iki agent'ın da diğerinin cevabı açıklandıktan sonra fikrini değiştirmediğini.</div>
+          <div class="callout" style="margin-top:10px"><b>Neyi kanıtlamaz:</b> ARGUS'un ATLAS'ın çıktısını görmediğini. Bunu kod yapısı sağlar: ayrı çağrı, farklı sağlayıcı, ARGUS'a yalnızca ham veri gider.</div>
+          <ul class="reasons" style="margin-top:14px">
+            <li>Kurcalama testi yapıldı: değiştirilmiş bulgu, ikinci reveal ve başka adresten reveal kontrat tarafından reddedildi.</li>
+            <li>Zincir erişilemezse yerel kayıt yedeğine geçilir ve raporda açıkça yazılır.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="degerlendirme">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Değerlendirme</div>
+      <h2>Uyum yüksek bulgular gerçekten daha mı isabetli?</h2>
+      <p>Gerçek tarihsel 1 dakikalık mumlar, zaman kesitli pencereler: agent'lar pencere sonrasını asla görmez. Enjekte veri dahil edilmez.</p>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap"><table class="t" id="evalTbl"><tr><td class="faint">Değerlendirme sonucu yükleniyor…</td></tr></table></div>
+      <div class="card-b small muted" id="evalNote" style="border-top:1px solid var(--border)"></div>
+    </div>
+  </div>
+</section>
+
+<section id="gecmis">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker">Geçmiş Turlar</div>
+      <h2>Her turun raporu saklanır</h2>
+      <p>Bir tura tıkla, laboratuvarda yeniden göster.</p>
+    </div>
+    <div class="hist" id="hist"><div class="faint small">Yükleniyor…</div></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span><b>ATLAS &amp; ARGUS</b> · Avalanche Team1 × OKX TR Agentic Hackathon · Ankara 2026</span>
+    <span><a href="https://github.com/ismailambarkutuk/atlas-argus" target="_blank" rel="noopener">GitHub</a> · "Uyum beyanı" kalibre değildir, doğruluk olasılığı değildir.</span>
+  </div>
+</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const LEVEL_TR = { YUKSEK: "YÜKSEK", ORTA: "ORTA", BELIRSIZ: "BELİRSİZ" };
+const LEVEL_FROM_TR = { "YÜKSEK": "YUKSEK", "ORTA": "ORTA", "BELİRSİZ": "BELIRSIZ" };
+const TYPE_TR = { price_drop: "Fiyat düşüşü", price_spike: "Fiyat sıçraması", volume_spike: "Hacim patlaması", none: "Anomali yok" };
+const TYPE_CLS = { price_drop: "drop", price_spike: "spike", volume_spike: "vol", none: "none" };
+const DIR_TR = { down: "↓ aşağı", up: "↑ yukarı", none: "yönsüz" };
+const STAGES = ["data", "stats", "agents", "seal", "compare", "risk", "order", "report"];
+
+let ST = null; // /api/status
+const S = {}; // koşu durumu
+
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => t.classList.remove("on"), 3200);
+}
+// Vitrin modu (GitHub Pages): sunucu yok, anahtar yok; kayıtlı gerçek koşular oynatılır
+const STATIC = !!window.AA_STATIC;
+const RECORDED = ["drop", "diverge", "kill"];
+async function staticApi(path, body) {
+  if (body !== undefined) {
+    if (path === "/api/run" && RECORDED.includes(body.scenario)) return playRecorded(body.scenario);
+    return { ok: false, error: "Bu mod gerçek sistemi çalıştırır; yalnızca yerel kurulumda (npm run ui) kullanılabilir." };
+  }
+  const q = new URLSearchParams(path.split("?")[1] || "");
+  const p = path.split("?")[0];
+  const file = p === "/api/status" ? "data/status.json" : p === "/api/reports" ? "data/reports.json" : p === "/api/evaluation" ? "data/evaluation.json"
+    : p.startsWith("/api/reports/") ? "data/reports/" + p.slice("/api/reports/".length) : p === "/api/demo-candles" ? `data/candles-${q.get("inject")}.json` : null;
+  if (!file) return null;
+  const r = await fetch(file);
+  return r.ok ? r.json() : null;
+}
+async function playRecorded(sc) {
+  const txt = await (await fetch(`data/runs/${sc}.jsonl`)).text();
+  S.paced = true;
+  txt.split("\n").filter(Boolean).forEach((l) => enqueue(JSON.parse(l)));
+  return { ok: true };
+}
+async function api(path, body) {
+  if (STATIC) return staticApi(path, body);
+  const opt = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json", "X-Atlas-Argus": "1" }, body: JSON.stringify(body) };
+  const r = await fetch(path, opt);
+  return r.json();
+}
+
+// ---------- Tema ve menü ----------
+function paintThemeBtn() {
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  $("#themeBtn").innerHTML = `<svg><use href="#${dark ? "i-moon" : "i-sun"}"/></svg><span>${dark ? "Koyu" : "Açık"}</span>`;
+}
+$("#themeBtn").addEventListener("click", () => {
+  const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem("aa-theme", next); } catch (e) {}
+  paintThemeBtn();
+});
+paintThemeBtn();
+$("#menuBtn").addEventListener("click", () => $("#navLinks").classList.toggle("open"));
+$$("#navLinks a").forEach((a) => a.addEventListener("click", () => $("#navLinks").classList.remove("open")));
+
+// ---------- Durum ----------
+function lim(k, v) { return `<div class="lim"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`; }
+async function loadStatus() {
+  try { ST = await api("/api/status"); } catch (e) { $("#sideNote").textContent = "Sunucuya ulaşılamadı. npm run ui ile başlatın."; return; }
+  const L = ST.limits;
+  $("#hsAtlas").textContent = cap(ST.atlas.provider);
+  $("#hsAtlasM").textContent = ST.atlas.model;
+  $("#hsArgus").textContent = cap(ST.argus.provider);
+  $("#hsArgusM").textContent = ST.argus.model;
+  $("#hsBudget").textContent = `${L.totalBudgetUsdt} USDT`;
+  $("#hsBudgetS").textContent = `işlem başı ${L.maxPerTradeUsdt} · günlük zarar ${L.maxDailyLossUsdt}`;
+  const limHtml = lim("Bütçe tavanı", `${L.totalBudgetUsdt} USDT`) + lim("İşlem başı", `${L.maxPerTradeUsdt} USDT`) + lim("Günlük zarar", `${L.maxDailyLossUsdt} USDT`) +
+    lim("Azaltma oranı", `%${Math.round(L.reduceFraction * 100)}`) + lim("Min. uyum beyanı", L.minConfidence) + lim("İzinli çiftler", L.allowedPairs.join(", "));
+  $("#limits").innerHTML = limHtml;
+  $("#limits2").innerHTML = limHtml;
+  const sel = $("#symSel");
+  if (sel.options.length !== L.allowedPairs.length) sel.innerHTML = L.allowedPairs.map((p) => `<option>${esc(p)}</option>`).join("");
+  if (ST.contract) {
+    $("#verifiedPill").href = ST.contract.codeUrl;
+    $("#codePill").href = ST.contract.codeUrl;
+    $("#cAddr").innerHTML = `<a href="${esc(ST.contract.url)}" target="_blank" rel="noopener">${esc(ST.contract.address)}</a>`;
+    $("#cComp").textContent = ST.contract.compiler + " · optimizer 200";
+    $("#cTx").textContent = ST.contract.deployTx.slice(0, 18) + "…";
+    $("#cTx").href = "https://testnet.snowtrace.io/tx/" + ST.contract.deployTx;
+  }
+  const provName = { contract: "ContractSeal (kontrat)", selftx: "SelfTxSeal (kendine tx)", local: "LocalLogSeal (yerel)" }[ST.sealProvider] || ST.sealProvider;
+  $("#cProv").textContent = provName;
+  $("#sealProv").textContent = provName;
+  const k = ST.kill;
+  const kb = $("#killBtn");
+  kb.classList.toggle("on", k.on);
+  kb.querySelector("span").textContent = k.on ? `Kill switch: AÇIK (${k.reason})` : "Kill switch: kapalı";
+  const real = ST.okxAccount === "real";
+  $("#statusRow").innerHTML = [
+    ST.dryRun ? `<span class="pill blue"><span class="dot"></span>DRY_RUN açık · emir gönderilmez</span>` : `<span class="pill bad"><span class="dot live"></span>DRY_RUN KAPALI · gerçek emir gidebilir</span>`,
+    `<span class="pill ${real ? "warn" : ""}">OKX: ${real ? "gerçek izole hesap (etkinlik)" : "demo hesap"}</span>`,
+    k.on ? `<span class="pill bad"><span class="dot live"></span>Kill switch AÇIK</span>` : `<span class="pill ok"><span class="dot"></span>Kill switch kapalı</span>`,
+    `<span class="pill violet">Mühür: ${esc(provName)}</span>`,
+    `<span class="pill">ATLAS · ${esc(ST.atlas.provider)}/${esc(ST.atlas.model)}</span>`,
+    `<span class="pill">ARGUS · ${esc(ST.argus.provider)}/${esc(ST.argus.model)}</span>`,
+  ].join("");
+  setRunning(!!ST.running, ST.running?.scenario);
+  if (STATIC) {
+    $("#statusRow").innerHTML = `<span class="pill violet"><span class="dot"></span>VİTRİN · Fuji'de mühürlenmiş gerçek koşuların kaydı oynatılır, emir yok</span>` +
+      `<span class="pill">ATLAS · ${esc(ST.atlas.provider)}</span><span class="pill">ARGUS · ${esc(ST.argus.provider)}</span><span class="pill violet">Mühür: ${esc(provName)}</span>`;
+    $("#sideNote").textContent = "Vitrin: Senaryo 1–3, sistemin gerçek bir koşusunun kaydını adım adım oynatır. Canlı modlar yalnızca yerel kurulumda (npm run ui) çalışır.";
+    return;
+  }
+  if (!ST.running) $("#sideNote").textContent = `Pencere ${ST.thresholds.window} mum · tetik: fiyat |z| ≥ ${ST.thresholds.triggerPriceZ} ya da hacim z ≥ ${ST.thresholds.triggerVolumeZ}`;
+}
+function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : "—"; }
+
+// ---------- Akış hattı ----------
+function setStage(id, state, text) {
+  const i = STAGES.indexOf(id);
+  if (state === "active") {
+    // Önceki etkin aşamalar tamamlanmış sayılır
+    STAGES.slice(0, i).forEach((p) => { const n = node(p); if (n.dataset.s === "active") n.dataset.s = "done"; });
+  }
+  const n = node(id);
+  n.dataset.s = state;
+  if (text !== undefined) n.querySelector(".st").textContent = text;
+  paintConns();
+}
+function node(id) { return $(`.node[data-st="${id}"]`); }
+function paintConns() {
+  STAGES.forEach((id, i) => {
+    const c = $(`.conn[data-c="${id}"]`);
+    if (!c) return;
+    const a = node(id).dataset.s, b = node(STAGES[i + 1]).dataset.s;
+    c.className = "conn" + (b === "active" ? " flow" : a === "done" && (b === "done" || b === "skip" || b === "fail") ? " done" : a === "active" ? " flow" : "");
+  });
+}
+function resetRail() { STAGES.forEach((id) => { const n = node(id); n.dataset.s = ""; n.querySelector(".st").textContent = ""; }); paintConns(); }
+
+// ---------- Agent kartları ----------
+function agentShell(name) {
+  const el = $(`#agent-${name}`);
+  const llm = ST ? ST[name.toLowerCase()] : null;
+  el.className = "agent";
+  el.dataset.s = "idle";
+  el.innerHTML = `
+    <div class="agent-h"><div><div class="agent-name">${name}</div><div class="agent-model">${llm ? esc(llm.provider + " · " + llm.model) : ""}</div></div><span class="agent-state">Bekliyor</span></div>
+    <div class="agent-body">
+      <div class="idle-msg">${name === "ATLAS" ? "Birincil analist." : "Bağımsız denetçi. ATLAS'ın çıktısını asla görmez."} Tetik gelince 60 mumluk ham pencereyi inceler.</div>
+      <div class="thinking"><div class="bars"><i></i><i></i><i></i></div><p class="tk">Ham pencereyi analiz ediyor…</p></div>
+      <div class="finding"></div>
+      <div class="invalid-msg"></div>
+      <div class="seal-over"><div><div class="lock"><svg><use href="#i-lock"/></svg></div><b>Mühürlendi</b><small>Diğer agent'ın cevabı açılmadan kilitlendi</small></div></div>
+    </div>
+    <div class="dispute-note"></div>`;
+  S.agents[name] = { state: "idle" };
+}
+function agentState(name, s, label) {
+  const el = $(`#agent-${name}`);
+  el.dataset.s = s;
+  el.querySelector(".agent-state").textContent = label || { idle: "Bekliyor", thinking: "Analiz ediyor", sealed: "Mühürlü", revealed: "Açıklandı", invalid: "BELİRSİZ" }[s];
+  S.agents[name].state = s;
+}
+function agentThinking(name, info) {
+  const el = $(`#agent-${name}`);
+  if (info) el.querySelector(".agent-model").textContent = info;
+  el.querySelector(".tk").textContent = el.classList.contains("dispute") ? "Uyuşmazlık turu: yalnızca yeni kanıtla fikir değiştirebilir…" : "Aynı ham pencereyi, diğerinden habersiz analiz ediyor…";
+  agentState(name, "thinking");
+}
+function agentFinding(name, f, opts = {}) {
+  const el = $(`#agent-${name}`);
+  const a = S.agents[name];
+  if (opts.dispute && a.finding && !a.prev) a.prev = a.finding;
+  a.finding = { ...(a.finding && !opts.dispute ? a.finding : {}), ...f };
+  const x = a.finding;
+  const ev = (x.evidence || []).slice(0, 3).map((e) => `<li><code>${esc(shortId(e.record_id))}</code>${S.injected.has(e.record_id) ? ' <b style="color:var(--amber)">ENJEKTE</b>' : ""} ${esc(e.note || "")}</li>`).join("");
+  el.querySelector(".finding").innerHTML = `
+    <div class="f-type"><span class="chip ${TYPE_CLS[x.type] || "none"}">${esc(TYPE_TR[x.type] || x.type)}</span><span class="chip">${esc(DIR_TR[x.direction] || x.direction)}</span>${x.cached ? '<span class="chip" style="color:var(--violet)">KAYITLI YANIT</span>' : ""}</div>
+    <div class="meter"><div class="ml"><span>Şiddet</span><b>${num(x.severity)}</b></div><div class="mb"><i data-w="${pct(x.severity)}"></i></div></div>
+    <div class="meter"><div class="ml"><span>Uyum beyanı (kalibre değil)</span><b>${num(x.confidence)}</b></div><div class="mb"><i data-w="${pct(x.confidence)}"></i></div></div>
+    <div class="f-exp">${esc(x.explanation || "")}</div>
+    ${ev ? `<ul class="f-ev">${ev}</ul>` : ""}
+    ${a.prev ? `<div class="f-prev">İlk bulgu: ${esc(TYPE_TR[a.prev.type] || a.prev.type)} / ${esc(DIR_TR[a.prev.direction] || a.prev.direction)}</div>` : ""}`;
+  requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll(".mb i").forEach((i) => (i.style.width = i.dataset.w))));
+}
+function agentInvalid(name, msg) {
+  const el = $(`#agent-${name}`);
+  el.querySelector(".invalid-msg").innerHTML = `<b>Geçerli bulgu üretmedi → belirsiz.</b><br>${esc(msg)}`;
+  agentState(name, "invalid");
+}
+function agentDispute(name, fields) {
+  const el = $(`#agent-${name}`);
+  el.classList.add("dispute");
+  el.querySelector(".dispute-note").textContent = `Uyuşmazlık turu: yalnızca "${fields}" alanında ayrışıldığı bildirildi. ARGUS'un gerekçesi gösterilmedi.`;
+}
+function revealAll() { ["ATLAS", "ARGUS"].forEach((n) => { if (S.agents[n].state === "sealed") agentState(n, "revealed"); }); }
+const num = (v) => (typeof v === "number" ? v.toFixed(2) : "—");
+const pct = (v) => `${Math.max(0, Math.min(1, Number(v) || 0)) * 100}%`;
+const shortId = (id) => String(id).replace(/^([A-Z]+-[A-Z]+)-1m-/, "").replace(/(\d{6})(\d{7})/, "…$2");
+
+// ---------- Grafik ----------
+function drawChart(d) {
+  S.chart = d;
+  const box = $("#chart");
+  if (!d || !d.candles || !d.candles.length) { box.innerHTML = `<div class="chart-empty">Bu tur için mum verisi yok.</div>`; return; }
+  const cs = d.candles, n = cs.length, W = 640, PH = 186, VH = 46, H = PH + VH + 14;
+  const step = (W - 40) / n, bw = Math.max(2, step * 0.62);
+  const hi = Math.max(...cs.map((c) => c.h)), lo = Math.min(...cs.map((c) => c.l));
+  const y = (v) => 14 + ((hi - v) / (hi - lo || 1)) * (PH - 24);
+  const vmax = Math.max(...cs.map((c) => c.v)) || 1;
+  const x = (i) => i * step + step / 2;
+  let g = "";
+  for (let k = 0; k <= 3; k++) {
+    const v = lo + ((hi - lo) * k) / 3, yy = y(v);
+    g += `<line class="grid-l" x1="0" x2="${W - 40}" y1="${yy}" y2="${yy}"/><text class="axis-t" x="${W - 36}" y="${yy + 3}">${fmtP(v)}</text>`;
+  }
+  let body = "";
+  cs.forEach((c, i) => {
+    const cls = c.inj ? "inj" : c.c >= c.o ? "up" : "down";
+    const top = y(Math.max(c.o, c.c)), bot = y(Math.min(c.o, c.c));
+    const vh = Math.max(1, (c.v / vmax) * VH);
+    body += `<g class="cdl" style="--d:${reduced ? 0 : i * 14}ms" data-i="${i}"><line class="w ${cls}" x1="${x(i)}" x2="${x(i)}" y1="${y(c.h)}" y2="${y(c.l)}"/><rect class="${cls}" x="${x(i) - bw / 2}" y="${top}" width="${bw}" height="${Math.max(1, bot - top)}" rx="1"/><rect class="vol ${cls}" x="${x(i) - bw / 2}" y="${PH + 10 + VH - vh}" width="${bw}" height="${vh}" rx="1"/></g>`;
+  });
+  const lx = x(n - 1);
+  let marks = `<line class="trig-l" x1="${lx}" x2="${lx}" y1="4" y2="${PH + VH + 10}"/><text class="trig-t" x="${lx - 4}" y="10" text-anchor="end">TETİK</text>`;
+  cs.forEach((c, i) => { if (c.inj) marks += `<text class="inj-t" x="${x(i) - 4}" y="${Math.min(PH - 4, y(c.l) + 14)}" text-anchor="end">ENJEKTE</text>`; });
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Son ${n} mum">
+    <defs><linearGradient id="scanGrad" x1="0" x2="1"><stop offset="0" stop-color="var(--violet)" stop-opacity="0"/><stop offset=".5" stop-color="var(--violet)" stop-opacity=".22"/><stop offset="1" stop-color="var(--violet)" stop-opacity="0"/></linearGradient></defs>
+    ${g}${body}${marks}<g id="evMarks"></g><rect class="scan" x="0" y="0" width="40" height="${PH + VH + 10}"/></svg>`;
+  $("#chartFile").textContent = d.file || "";
+  const last = cs[n - 1];
+  $("#chartSym").textContent = `${n} mum · son ${fmtP(last.c)}`;
+  cs.forEach((c) => { if (c.inj) S.injected.add(c.id); });
+  if (d.signals) setGauges(d.signals.priceZ, d.signals.volZ, d.signals);
+  box.classList.toggle("scanning", ["ATLAS", "ARGUS"].some((a) => S.agents[a] && S.agents[a].state === "thinking"));
+}
+function fmtP(v) { return v >= 1000 ? v.toLocaleString("tr-TR", { maximumFractionDigits: 1 }) : v.toPrecision(5); }
+function markEvidence(agent, evidence) {
+  const g = $("#evMarks");
+  if (!g || !S.chart) return;
+  const cs = S.chart.candles, W = 640, PH = 186, n = cs.length, step = (W - 40) / n;
+  const hi = Math.max(...cs.map((c) => c.h)), lo = Math.min(...cs.map((c) => c.l));
+  const y = (v) => 14 + ((hi - v) / (hi - lo || 1)) * (PH - 24);
+  (evidence || []).forEach((e, k) => {
+    const i = cs.findIndex((c) => c.id === e.record_id);
+    if (i < 0) return;
+    const cx = i * step + step / 2, cy = y(cs[i].h) - (agent === "ATLAS" ? 7 : 15);
+    g.insertAdjacentHTML("beforeend", `<circle class="ev ${agent}" cx="${cx}" cy="${Math.max(5, cy)}" r="3.6" style="animation-delay:${k * 120}ms"><title>${esc(agent + ": " + (e.note || e.record_id))}</title></circle>`);
+  });
+}
+function setScanning(on) { $("#chart").classList.toggle("scanning", on); }
+
+// ---------- z göstergeleri ----------
+function setGauges(pz, vz, sig) {
+  if (typeof pz !== "number") return;
+  const T = ST ? ST.thresholds : { triggerPriceZ: 2, confirmPriceZ: 3, triggerVolumeZ: 3, confirmVolumeZ: 2 };
+  S.signals = Object.assign(S.signals || {}, { priceZ: pz, volZ: vz }, sig || {});
+  gauge("#gbP", Math.abs(pz), [[T.triggerPriceZ, "tetik"], [T.confirmPriceZ, "onay"]], T.triggerPriceZ, T.confirmPriceZ);
+  gauge("#gbV", Math.max(0, vz), [[T.confirmVolumeZ, "onay"], [T.triggerVolumeZ, "tetik"]], T.triggerVolumeZ, T.confirmVolumeZ);
+  $("#gzP").textContent = `z = ${pz.toFixed(2)}`;
+  $("#gzV").textContent = `z = ${vz.toFixed(2)}`;
+}
+function gauge(sel, v, marks, trig, conf) {
+  const MAX = 6, bar = $(sel), f = bar.querySelector(".gfill");
+  f.style.width = `${Math.min(v / MAX, 1) * 100}%`;
+  f.className = "gfill" + (v >= Math.max(trig, conf) ? " conf" : v >= Math.min(trig, conf) ? " trig" : "");
+  bar.querySelectorAll(".gmark").forEach((m) => m.remove());
+  marks.forEach(([m, t]) => bar.insertAdjacentHTML("beforeend", `<div class="gmark" style="left:${(m / MAX) * 100}%"><span>${t} ${m}</span></div>`));
+}
+
+// ---------- Mühür satırları ----------
+function sealRow(group, agent, kind) {
+  const key = `${group}-${agent}-${kind}`;
+  let r = $(`#sealList [data-k="${key}"]`);
+  if (r) return r;
+  if ($("#sealList .seal-empty")) $("#sealList").innerHTML = "";
+  let gEl = $(`#sealList [data-g="${group}"]`);
+  if (!gEl) {
+    $("#sealList").insertAdjacentHTML("beforeend", `<div data-g="${group}"><div class="seal-group-t">${group === "dispute" ? "Uyuşmazlık turu" : "İlk bulgular"}</div><div class="seal-list"></div></div>`);
+    gEl = $(`#sealList [data-g="${group}"]`);
+  }
+  gEl.querySelector(".seal-list").insertAdjacentHTML("beforeend",
+    `<div class="srow" data-k="${key}" data-s="pending"><div class="si"><svg><use href="#${kind === "commit" ? "i-lock" : "i-unlock"}"/></svg></div><div><div class="sn"><span style="color:var(--${agent.toLowerCase()})">${agent}</span> · ${kind === "commit" ? "commit" : "reveal + doğrulama"}</div><div class="sh">bekleniyor…</div></div><span class="sl"></span></div>`);
+  return $(`#sealList [data-k="${key}"]`);
+}
+function sealDone(group, agent, kind, { ok, hash, url, local, error }) {
+  const r = sealRow(group, agent, kind);
+  r.dataset.s = ok ? "ok" : "fail";
+  r.querySelector(".sh").textContent = ok ? (hash ? hash : kind === "reveal" ? "hash zincirde yeniden hesaplandı ✓" : "") : error || "başarısız";
+  r.querySelector(".sl").innerHTML = url ? `<a href="${esc(url)}" target="_blank" rel="noopener">Snowtrace ↗</a>` : local ? `<span class="loc">yerel kayıt</span>` : "";
+}
+
+// ---------- Karşılaştırma ----------
+function setLevel(lv) {
+  const el = $("#level");
+  el.className = "level";
+  void el.offsetWidth;
+  el.className = "level " + lv;
+  el.textContent = LEVEL_TR[lv];
+  $("#levelSub").textContent = { YUKSEK: "İki agent örtüşüyor, uyum beyanları yeterli, istatistik de onaylıyor.", ORTA: "Örtüşme var ama koşullardan biri eksik → en fazla yarım boyut.", BELIRSIZ: "Şüphede kalan her durumun sonucu: işlem yapma." }[lv];
+  S.level = lv;
+  renderChecks();
+}
+function renderChecks() {
+  const a = S.agents.ATLAS?.finding, b = S.agents.ARGUS?.finding;
+  if (!a || !b) { $("#checks").innerHTML = ""; return; }
+  const minC = ST ? ST.limits.minConfidence : 0.7;
+  const sc = S.signals && typeof S.signals.statConfirm === "boolean" ? S.signals.statConfirm : null;
+  const T = ST ? ST.thresholds : { confirmPriceZ: 3, confirmVolumeZ: 2 };
+  const rows = [
+    [a.anomaly === undefined || b.anomaly === undefined ? (a.type === "none") === (b.type === "none") : a.anomaly === b.anomaly, "Anomali kararı aynı"],
+    [a.type === b.type, `Tip aynı (${esc(a.type)} · ${esc(b.type)})`],
+    [a.direction === b.direction, `Yön aynı (${esc(a.direction)} · ${esc(b.direction)})`],
+    [a.confidence >= minC && b.confidence >= minC, `İki uyum beyanı ≥ ${minC} (${num(a.confidence)} · ${num(b.confidence)})`],
+    [sc, `İstatistik onayı: fiyat |z| ≥ ${T.confirmPriceZ} ve hacim z ≥ ${T.confirmVolumeZ}`],
+  ];
+  $("#checks").innerHTML = rows.map(([ok, t]) => `<li><span class="ck ${ok === null ? "q" : ok ? "y" : "n"}">${ok === null ? "?" : ok ? "✓" : "✕"}</span><span>${t}</span></li>`).join("");
+}
+function addReason(sel, text, cls = "") { $(sel).insertAdjacentHTML("beforeend", `<li class="${cls}">${esc(text)}</li>`); }
+
+// ---------- Emir ve karar ----------
+function setExec(kind, title, sub, icon) {
+  const el = $("#exec");
+  el.className = `exec ${kind} anim`;
+  el.innerHTML = `<div class="ei"><svg><use href="#${icon}"/></svg></div><div><b>${esc(title)}</b><small>${esc(sub)}</small></div>`;
+}
+function setOrder(cmd) {
+  const o = $("#order");
+  o.classList.add("on");
+  o.innerHTML = `<span class="p">$</span> ${esc(cmd)}`;
+}
+function setVerdict(kind, title, sub) {
+  const v = $("#verdict");
+  v.className = `verdict ${kind}`;
+  void v.offsetWidth;
+  v.classList.add("on");
+  const icon = { act: "i-shield", hold: "i-pause", kill: "i-power", alert: "i-bell", calm: "i-check" }[kind];
+  v.querySelector(".vi").innerHTML = `<svg><use href="#${icon}"/></svg>`;
+  v.querySelector("b").textContent = title;
+  v.querySelector("span").textContent = sub;
+}
+function verdictFromExec(status, action, msg) {
+  if (status === "SENT") setVerdict("act", "Koruma emri gönderildi", msg || "Risk motorunun onayladığı azaltma emri borsaya iletildi.");
+  else if (status === "DRY_RUN") setVerdict("act", "Emin → koruma emri hazırlandı", "DRY_RUN: emir oluşturuldu ve loglandı ama gönderilmedi.");
+  else if (status === "BLOCKED_KILL") setVerdict("kill", "Kill switch açık → hiçbir şey gönderilmedi", "Agent'lar emin olsa bile emir kapısı kapalı.");
+  else if (action === "ALERT") setVerdict("alert", "Yalnızca uyarı", "Bu bulgu tipi emir gerektirmez; kullanıcı bilgilendirilir.");
+  else if (status === "REJECTED" || status === "FAILED") setVerdict("hold", "Emir reddedildi → işlem yok", msg || "");
+  else setVerdict("hold", "Emin değil → hiçbir şey yapılmadı", "Kural gereği şüphede kalan her durumun sonucu: işlem yapma.");
+}
+
+// ---------- Etiketler ----------
+function addLabel(key) {
+  if (S.labels.has(key)) return;
+  S.labels.add(key);
+  const m = { ENJEKTE: "inj", "KAYITLI YANIT": "cached", DRY_RUN: "dry", "SAHTE BAKİYE": "mock", "CANLI VERİ": "live", "CANLI LLM": "live" };
+  $("#labels").insertAdjacentHTML("beforeend", `<span class="lbl ${m[key] || ""}">${esc(key)}</span>`);
+}
+
+// ---------- Sıfırlama ----------
+function resetRound(keepChart) {
+  S.agents = {};
+  agentShell("ATLAS");
+  agentShell("ARGUS");
+  S.dispute = false;
+  S.level = null;
+  if (!keepChart) { S.injected = new Set(); S.signals = null; }
+  $("#sealList").innerHTML = `<div class="seal-empty">İki bulgu da hazır olunca hash'leri önce commit edilir; ikisi de zincire yazılınca reveal edilir.</div>`;
+  const lv = $("#level"); lv.className = "level"; lv.textContent = "—";
+  $("#levelSub").textContent = "Örtüşme = anomaly, type ve direction aynı. Yüksek için ayrıca iki uyum beyanı ≥ 0.7 ve istatistik onayı gerekir.";
+  $("#checks").innerHTML = ""; $("#cmpReasons").innerHTML = ""; $("#riskReasons").innerHTML = ""; $("#uncert").innerHTML = "";
+  $("#order").className = "order mono"; $("#order").innerHTML = "";
+  const ex = $("#exec"); ex.className = "exec none";
+  ex.innerHTML = `<div class="ei"><svg><use href="#i-pause"/></svg></div><div><b>Bekliyor</b><small>Risk motoru onaylamadan hiçbir emir hazırlanmaz.</small></div>`;
+  $("#verdict").className = "verdict";
+  if (S.chart) { const g = $("#evMarks"); if (g) g.innerHTML = ""; }
+  STAGES.slice(2).forEach((id) => { const n = node(id); n.dataset.s = ""; n.querySelector(".st").textContent = ""; });
+  paintConns();
+}
+function resetAll() {
+  S.labels = new Set();
+  S.injected = new Set();
+  S.signals = null;
+  S.chart = null;
+  S.pulses = [];
+  S.watch = false;
+  $("#labels").innerHTML = "";
+  $("#trigFlash").className = "trig-flash";
+  $("#pulse").className = "pulse-strip"; $("#pulse").innerHTML = "";
+  $("#chart").innerHTML = `<div class="chart-empty">Veri bekleniyor…</div>`;
+  $("#chartFile").textContent = ""; $("#chartSym").textContent = "60 mum";
+  $("#gzP").textContent = "—"; $("#gzV").textContent = "—";
+  $$(".gfill").forEach((f) => { f.style.width = "0"; f.className = "gfill"; });
+  $$(".gmark").forEach((m) => m.remove());
+  $("#term").innerHTML = "";
+  resetRail();
+  resetRound(true);
+}
+
+// ---------- Terminal ----------
+function termLine(time, tag, msg, level) {
+  const t = $("#term");
+  const body = esc(msg).replace(/https:\/\/testnet\.snowtrace\.io\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+  const html = level === "banner" ? `<div class="l banner">${body}</div>` : `<div class="l ${level}"><span class="tm">${esc(time)}</span> <span class="tg">[${esc(tag)}]</span> ${body}</div>`;
+  t.insertAdjacentHTML("beforeend", html);
+  while (t.children.length > 600) t.firstChild.remove();
+  if ($("#autoScroll").checked) t.scrollTop = t.scrollHeight;
+}
+
+// ---------- Olay işleyici (log satırlarını aşamalara çevirir) ----------
+const RE_FIND = /^(\w+)\/(\w+)( \(uyuşmazlık turu\))? şiddet ([\d.]+) uyum beyanı ([\d.]+)( \[KAYITLI YANIT\])? — (.*)$/;
+const RE_Z = /fiyat z=(-?[\d.]+), hacim z=(-?[\d.]+)/;
+
+function onLine(ev) {
+  const { tag, msg, level } = ev;
+  termLine(ev.time, tag, msg, level);
+  let d = 110;
+  if (tag === "VERİ") { setStage("data", "active", msg.includes("replay") ? "kayıttan" : "OKX anlık"); if (level === "ok" || /kaydedildi|replay:/.test(msg)) setStage("data", "done", msg.includes("replay") ? "kayıttan (replay)" : "OKX anlık"); d = 500; }
+  else if (tag === "ENJEKTE") { addLabel("ENJEKTE"); d = 300; }
+  else if (tag === "İSTATİSTİK") {
+    setStage("stats", "active", "hesaplanıyor");
+    const z = RE_Z.exec(msg);
+    if (z) setGauges(+z[1], +z[2]);
+    const f = $("#trigFlash");
+    if (/^TETİK/.test(msg)) {
+      setStage("stats", "done", "TETİK");
+      f.className = "trig-flash t on"; f.textContent = "TETİK: " + (msg.match(/\(([^)]*≥[^)]*)\)/)?.[1] || "eşik aşıldı") + " → LLM turu başlıyor";
+      d = 900;
+    } else if (/tetik yok/.test(msg)) {
+      setStage("stats", "done", "normal");
+      f.className = "trig-flash n on"; f.textContent = "Tetik yok → LLM çağrılmadı, işlem yok.";
+      STAGES.slice(2).forEach((s) => setStage(s, "skip", "—"));
+      setVerdict("calm", "Piyasa olağan → LLM çağrılmadı", "Her mumda LLM çağrılmaz; yalnızca istatistik tetiği çalışınca agent'lar devreye girer.");
+      d = 600;
+    }
+  }
+  else if (tag === "TUR") { if (/başladı/.test(msg)) { resetRound(true); setStage("stats", "done", "TETİK"); } d = 400; }
+  else if (tag === "AGENT") { setStage("agents", "active", "paralel analiz"); setScanning(true); d = 600; }
+  else if (tag === "ATLAS" || tag === "ARGUS") d = onAgent(tag, msg, level);
+  else if (tag === "MÜHÜR") d = onSeal(msg, level);
+  else if (tag === "KARŞILAŞTIRMA") {
+    setStage("compare", "active", "kurallar");
+    revealAll();
+    setScanning(false);
+    const m = /Uyum seviyesi: (\S+)/.exec(msg);
+    if (m) { const lv = LEVEL_FROM_TR[m[1]] || "BELIRSIZ"; setLevel(lv); setStage("compare", "done", LEVEL_TR[lv]); d = 1100; }
+    else {
+      if (/^Ayrışma/.test(msg)) { S.dispute = true; setStage("compare", "active", "ayrışma"); }
+      addReason("#cmpReasons", msg, /Ayrışma|belirsiz/.test(msg) ? "warn" : "");
+      renderChecks();
+      d = 500;
+    }
+  }
+  else if (tag === "BAKİYE" || tag === "ENSTRÜMAN") {
+    setStage("risk", "active", "girdiler");
+    if (/SAHTE BAKİYE/.test(msg)) addLabel("SAHTE BAKİYE");
+    addReason("#riskReasons", `${tag === "BAKİYE" ? "Bakiye" : "Enstrüman"}: ${msg}`, level === "error" ? "err" : level === "warn" ? "warn" : "");
+    d = 350;
+  }
+  else if (tag === "RİSK") { setStage("risk", "active", "kontrol"); addReason("#riskReasons", msg, /^ONAY/.test(msg) ? "ok" : /KILL|ret|aşıyor|yok/.test(msg) ? "warn" : ""); d = 380; }
+  else if (tag === "EMİR") d = onOrder(msg, level);
+  else if (tag === "İZLEME") d = onWatch(msg, level);
+  else if (tag === "ANA") { if (level === "error") STAGES.forEach((s) => { if (node(s).dataset.s === "active") setStage(s, "fail", "hata"); }); }
+  return d;
+}
+
+function onAgent(name, msg, level) {
+  if (/^analiz başladı/.test(msg)) {
+    setStage("agents", "active", "paralel analiz");
+    setScanning(true);
+    const info = /\((.*)\)/.exec(msg)?.[1];
+    if (info === "KAYITLI YANIT") addLabel("KAYITLI YANIT");
+    agentThinking(name, info === "KAYITLI YANIT" ? `${ST ? ST[name.toLowerCase()].provider : ""} · KAYITLI YANIT` : info?.replace("/", " · "));
+    return 450;
+  }
+  if (/^uyuşmazlık turu: yalnızca/.test(msg)) {
+    const fields = /"([^"]+)"/.exec(msg)?.[1] || "";
+    agentDispute(name, fields);
+    agentThinking(name);
+    setStage("agents", "active", "uyuşmazlık turu");
+    setScanning(true);
+    return 900;
+  }
+  const m = RE_FIND.exec(msg);
+  if (m) {
+    const dispute = !!m[3];
+    if (m[6]) addLabel("KAYITLI YANIT");
+    agentFinding(name, { type: m[1], direction: m[2], severity: +m[4], confidence: +m[5], cached: !!m[6], explanation: m[7] }, { dispute });
+    agentState(name, "sealed", "Mühürlü");
+    const other = name === "ATLAS" ? "ARGUS" : "ATLAS";
+    if (!dispute && S.agents[other].state !== "thinking") { setScanning(false); setStage("agents", "done", "iki bulgu"); }
+    if (dispute) { setScanning(false); setStage("agents", "done", "yeni bulgu"); }
+    return 1000;
+  }
+  if (/BELİRSİZ/.test(msg)) {
+    agentInvalid(name, msg.replace(/^BELİRSİZ[^:]*:\s*/, ""));
+    const other = name === "ATLAS" ? "ARGUS" : "ATLAS";
+    if (S.agents[other].state !== "thinking") setScanning(false);
+    return 900;
+  }
+  if (/geçici hata/.test(msg)) { $(`#agent-${name} .tk`).textContent = msg; return 200; }
+  return 100;
+}
+
+function onSeal(msg, level) {
+  if (/kontratı:|SelfTxSeal kullanılıyor|LocalLogSeal.*kullanılıyor/.test(msg)) return 100; // başlangıç bilgisi
+  const group = S.dispute ? "dispute" : "initial";
+  if (/commit ediliyor/.test(msg)) {
+    setStage("seal", "active", "commit");
+    sealRow(group, "ATLAS", "commit"); sealRow(group, "ARGUS", "commit");
+    return 600;
+  }
+  if (/tüm commit'ler tamam/.test(msg)) { setStage("seal", "active", "reveal"); return 500; }
+  const m = /^(ATLAS|ARGUS) (commit|reveal)/.exec(msg);
+  if (m) {
+    const [, agent, kind] = m;
+    if (group === "dispute") setStage("seal", "active", kind === "commit" ? "commit (tur 2)" : "reveal (tur 2)");
+    const ok = !/başarısız/.test(msg);
+    sealDone(group, agent, kind, {
+      ok,
+      hash: /0x[0-9a-f]{8,}…/.exec(msg)?.[0],
+      url: /https:\/\/\S+/.exec(msg)?.[0],
+      local: /\(yerel: /.test(msg),
+      error: ok ? undefined : msg.replace(/^.*başarısız:\s*/, ""),
+    });
+    if (kind === "reveal" && ok) {
+      agentState(agent, "revealed");
+      const f = S.agents[agent]?.finding;
+      if (S.agents.ATLAS.state === "revealed" && S.agents.ARGUS.state === "revealed") setStage("seal", "done", group === "dispute" ? "2 tur mühürlü" : "mühürlü");
+      else if (group === "dispute") setStage("seal", "done", "2 tur mühürlü");
+      if (f) renderChecks();
+    }
+    if (!ok) setStage("seal", "fail", "başarısız");
+    return kind === "reveal" ? 800 : 600;
+  }
+  if (level === "warn") { addReason("#cmpReasons", "Mühür: " + msg, "warn"); return 300; }
+  return 120;
+}
+
+function onOrder(msg, level) {
+  setStage("order", "active", "");
+  let m;
+  if ((m = /emir HAZIRLANDI ama GÖNDERİLMEDİ: (okx .*)$/.exec(msg))) {
+    addLabel("DRY_RUN");
+    setOrder(m[1]);
+    setExec("dry", "Hazırlandı · gönderilmedi", /replay|ENJEKTE/.test(msg) ? "Kayıtlı/enjekte veriden gerçek emir asla çıkmaz." : "DRY_RUN=1: emir loglandı, borsaya gitmedi.", "i-send");
+    setStage("order", "done", "DRY_RUN");
+    return 1100;
+  }
+  if (/KILL SWITCH AÇIK/.test(msg)) { setExec("bad", "Kill switch: engellendi", msg, "i-power"); setStage("order", "fail", "kill switch"); return 1100; }
+  if ((m = /ordId (\d+)/.exec(msg))) { setExec("ok", "Emir gönderildi", "ordId " + m[1], "i-check"); setStage("order", "done", "gönderildi"); return 1100; }
+  if (/→ gönderiliyor: (okx .*)$/.test(msg)) { setOrder(/(okx .*)$/.exec(msg)[1]); setExec("dry", "Gönderiliyor…", "Borsa yanıtı bekleniyor", "i-send"); return 600; }
+  if (/Yalnızca uyarı/.test(msg)) { setExec("alert", "Yalnızca uyarı", "Bu bulgu tipi emir gerektirmez.", "i-bell"); setStage("order", "skip", "uyarı"); setStage("risk", "done", "uyarı"); return 900; }
+  if (/onaylamadı/.test(msg)) { setExec("none", "Emir yok", "Risk motoru onay vermedi.", "i-pause"); setStage("order", "skip", "yok"); setStage("risk", "done", "ret"); return 900; }
+  if (level === "error") { setExec("bad", "Emir reddedildi", msg, "i-power"); setStage("order", "fail", "ret"); return 900; }
+  return 200;
+}
+
+function onWatch(msg, level) {
+  S.watch = true;
+  const m = /^(\d\d:\d\d) UTC · fiyat z=(-?[\d.]+), hacim z=(-?[\d.]+) · (.*)$/.exec(msg);
+  if (m) {
+    setGauges(+m[2], +m[3]);
+    const trig = /TETİK/.test(m[4]);
+    S.pulses.push({ t: m[1], p: +m[2], v: +m[3], trig, late: /geç kontrol/.test(m[4]) });
+    S.pulses = S.pulses.slice(-10);
+    paintPulse();
+    setStage("stats", trig ? "done" : "done", trig ? "TETİK" : `${m[1]} normal`);
+    if (node("data").dataset.s !== "done") setStage("data", "done", "OKX anlık");
+    return 350;
+  }
+  if (/izleniyor/.test(msg)) { setStage("data", "done", "OKX anlık"); setStage("stats", "active", "her dakika"); paintPulse(); }
+  return 150;
+}
+function paintPulse() {
+  const p = $("#pulse");
+  p.className = "pulse-strip on";
+  const now = Date.now(), next = 60000 - (now % 60000) + 5000;
+  p.innerHTML = S.pulses.map((x) => `<span class="pchip ${x.trig ? "t" : ""}" title="fiyat z ${x.p}, hacim z ${x.v}">${x.t} · ${x.trig ? "TETİK" : "normal"}${x.late ? " (geç)" : ""}</span>`).join("") +
+    `<span class="pchip next" id="nextChk">sonraki kontrol ~${Math.round(next / 1000)} sn</span>`;
+}
+setInterval(() => {
+  const n = $("#nextChk");
+  if (n && S.watch && S.running) n.textContent = `sonraki kontrol ~${Math.round((60000 - (Date.now() % 60000) + 5000) / 1000) % 65} sn`;
+}, 1000);
+
+// ---------- Rapor (tur sonu: kesin durum) ----------
+function onReport(r, opts = {}) {
+  S.injected = new Set([...(S.injected || []), ...(r.injectedRecordIds || [])]);
+  if (r.signals) setGauges(r.signals.priceZ, r.signals.volZ, r.signals);
+  const initial = r.agents.filter((a) => a.phase !== "dispute");
+  const disp = r.agents.find((a) => a.phase === "dispute");
+  for (const a of initial) {
+    if (!S.agents[a.agent]) continue;
+    if (a.ok && a.finding) {
+      agentFinding(a.agent, { ...a.finding, cached: a.cached });
+      agentState(a.agent, "revealed");
+      const el = $(`#agent-${a.agent}`);
+      el.querySelector(".agent-model").textContent = `${a.model || "?"}${a.cached ? " · KAYITLI YANIT" : ` · ${a.durationMs} ms`}`;
+      markEvidence(a.agent, a.finding.evidence);
+    } else agentInvalid(a.agent, (a.errors || []).join("; "));
+  }
+  if (disp) {
+    agentDispute("ATLAS", (r.compare.disagreement || []).join(", ") || "ayrışılan alan");
+    if (disp.ok && disp.finding) { agentFinding("ATLAS", { ...disp.finding, cached: disp.cached }, { dispute: true }); agentState("ATLAS", "revealed"); }
+    else agentInvalid("ATLAS", (disp.errors || []).join("; "));
+  }
+  // Mühür
+  const sealFrom = (s, group) => s && [...(s.commits || []), ...(s.reveals || [])].forEach((x) =>
+    sealDone(group, x.agent, x.kind, { ok: x.ok, hash: x.hash ? x.hash.slice(0, 20) + "…" : "", url: x.explorerUrl, local: !x.explorerUrl && !!x.file, error: x.error }));
+  if (opts.full) { sealFrom(r.seal, "initial"); sealFrom(r.disputeSeal, "dispute"); }
+  if (opts.full) {
+    $("#sealProv").textContent = r.flags.sealProvider;
+    r.compare.reasons.forEach((x) => addReason("#cmpReasons", x, /Ayrışma|belirsiz/i.test(x) ? "warn" : ""));
+    r.risk.reasons.forEach((x) => addReason("#riskReasons", x, /^ONAY/.test(x) ? "ok" : ""));
+    if (r.exec.args) setOrder("okx " + r.exec.args.join(" "));
+    const st = r.exec.status;
+    if (st === "DRY_RUN") setExec("dry", "Hazırlandı · gönderilmedi", r.exec.message, "i-send");
+    else if (st === "SENT") setExec("ok", "Emir gönderildi", "ordId " + r.exec.ordId, "i-check");
+    else if (st === "BLOCKED_KILL") setExec("bad", "Kill switch: engellendi", r.exec.message, "i-power");
+    else if (r.risk.action === "ALERT") setExec("alert", "Yalnızca uyarı", r.exec.message, "i-bell");
+    else setExec(st === "SKIPPED" ? "none" : "bad", st === "SKIPPED" ? "Emir yok" : "Emir reddedildi", r.exec.message, "i-pause");
+  }
+  setLevel(r.compare.level);
+  (r.uncertainties || []).forEach((u) => addReason("#uncert", "Belirsizlik: " + u, "warn"));
+  if (r.trigger.injected || (r.injectedRecordIds || []).length) addLabel("ENJEKTE");
+  if (r.agents.some((a) => a.cached)) addLabel("KAYITLI YANIT");
+  if (r.balance && r.balance.source === "mock") addLabel("SAHTE BAKİYE");
+  if (r.exec.dryRun) addLabel("DRY_RUN");
+  // Aşamalar
+  setStage("data", "done", node("data").querySelector(".st").textContent || "tamam");
+  setStage("stats", "done", "TETİK");
+  setStage("agents", "done", disp ? "2 tur" : "iki bulgu");
+  setStage("seal", r.seal ? (r.seal.ok ? "done" : "fail") : "skip", r.seal ? (r.seal.ok ? (r.disputeSeal ? "2 tur mühürlü" : "mühürlü") : "başarısız") : "—");
+  setStage("compare", "done", LEVEL_TR[r.compare.level]);
+  setStage("risk", "done", r.risk.approved ? "ONAY" : r.risk.action === "ALERT" ? "uyarı" : "ret");
+  const os = r.exec.status;
+  setStage("order", os === "SENT" || os === "DRY_RUN" ? "done" : os === "BLOCKED_KILL" || os === "REJECTED" || os === "FAILED" ? "fail" : "skip", { SENT: "gönderildi", DRY_RUN: "DRY_RUN", BLOCKED_KILL: "kill switch", SKIPPED: "yok", REJECTED: "ret", FAILED: "hata" }[os]);
+  setStage("report", "done", "yazıldı");
+  setScanning(false);
+  // Kill switch açıksa risk motoru zaten reddeder; sonuç "emin değil" değil "kapı kapalı"dır
+  const killed = r.flags.killSwitch && r.flags.killSwitch !== "kapalı" && os !== "SENT";
+  if (killed) {
+    setExec("bad", "Kill switch: engellendi", `Kill switch açık (${r.flags.killSwitch}) → hiçbir emir gitmez.`, "i-power");
+    setStage("order", "fail", "kill switch");
+    setVerdict("kill", "Kill switch açık → hiçbir şey gönderilmedi", `Uyum ${LEVEL_TR[r.compare.level]} olsa bile emir kapısı kapalı.`);
+  } else verdictFromExec(os, r.risk.action, r.exec.message);
+}
+
+// ---------- Kuyruk: olaylar animasyon için aralıklı oynatılır ----------
+const queue = [];
+let pumping = false;
+function enqueue(ev) { queue.push(ev); if (!pumping) pump(); }
+async function pump() {
+  pumping = true;
+  while (queue.length) {
+    const ev = queue.shift();
+    let d = 0;
+    try { d = handle(ev) || 0; } catch (e) { console.error(e); }
+    if ((queue.length > 40 && !S.paced) || reduced) d = 0; // sayfa yenilendiyse geride kalanı hızlı yakala
+    if (d) await sleep(d);
+  }
+  pumping = false;
+}
+function handle(ev) {
+  switch (ev.type) {
+    case "start":
+      resetAll();
+      S.running = true;
+      S.scenario = ev.scenario;
+      setRunning(true, ev.scenario);
+      $("#runTitle").innerHTML = `<span class="dot live" style="color:var(--green)"></span>${esc(ev.title)}`;
+      $("#runCmd").textContent = "$ " + ev.command;
+      if (ev.scenario === "live" || ev.scenario === "watch") addLabel("CANLI VERİ");
+      if (ev.scenario === "drop-live") addLabel("CANLI LLM");
+      if (STATIC) addLabel("KAYITLI KOŞU");
+      setStage("data", "active", "yükleniyor");
+      return 300;
+    case "candles": drawChart(ev.data); return 500;
+    case "line": return onLine(ev);
+    case "banner":
+      termLine("", "", ev.text, "banner");
+      if (/^SONUÇ/.test(ev.text)) setStage("report", "active", "yazılıyor");
+      return 30;
+    case "report": onReport(ev.data); return 400;
+    case "exit":
+      S.running = false;
+      S.paced = false;
+      setRunning(false);
+      STAGES.forEach((s) => { if (node(s).dataset.s === "active") setStage(s, ev.code === 0 || ev.code === null ? "done" : "fail", ev.code === 0 || ev.code === null ? undefined : "durdu"); });
+      $("#runTitle").innerHTML = `<span class="dot" style="color:${ev.code === 0 ? "var(--green)" : "var(--faint)"}"></span>${esc($("#runTitle").textContent)} · bitti`;
+      loadHistory();
+      loadStatus();
+      return 0;
+    default: return 0;
+  }
+}
+
+// ---------- Bağlantı ----------
+function connect() {
+  const es = new EventSource("/api/events");
+  es.onmessage = (m) => {
+    const ev = JSON.parse(m.data);
+    if (ev.type === "hello") { $("#sideNote").textContent = ev.running ? "Devam eden koşuya bağlanıldı." : $("#sideNote").textContent; return; }
+    enqueue(ev);
+  };
+  es.onerror = () => { $("#sideNote").textContent = "Sunucu bağlantısı koptu, yeniden deneniyor…"; };
+}
+
+function setRunning(on, sc) {
+  S.running = on;
+  $$(".scen").forEach((b) => { b.disabled = on; b.classList.toggle("active", on && b.dataset.sc === sc); });
+  $("#stopBtn").disabled = !on;
+  $("#symSel").disabled = on;
+  if (on) $("#sideNote").textContent = sc === "watch" ? "İzleme sürüyor. Durdurmak için ■ Durdur." : "Koşu sürüyor…";
+}
+
+$$(".scen").forEach((b) => b.addEventListener("click", async () => {
+  const sc = b.dataset.sc;
+  if ((sc === "live" || sc === "watch") && ST && !ST.dryRun && ST.okxAccount === "real") {
+    if (!confirm("DRY_RUN KAPALI ve hesap GERÇEK. Agent'lar emin olur ve risk motoru onaylarsa gerçek emir gidebilir. Devam edilsin mi?")) return;
+  }
+  const r = await api("/api/run", { scenario: sc, symbol: $("#symSel").value });
+  if (!r.ok) toast(r.error || "başlatılamadı");
+  else document.getElementById("rail").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+}));
+$("#stopBtn").addEventListener("click", async () => { const r = await api("/api/stop", {}); if (!r.ok) toast(r.error); });
+$("#killBtn").addEventListener("click", async () => {
+  const on = !(ST && ST.kill.on);
+  if (!on && ST && ST.kill.reason.includes(".env")) { toast("Kill switch .env'de açık (KILL_SWITCH=1); oradan kapatılmalı."); return; }
+  const r = await api("/api/kill", { on });
+  if (r.ok) { toast(on ? "Kill switch AÇILDI: hiçbir emir gitmez." : "Kill switch kapatıldı."); loadStatus(); }
+});
+
+// ---------- Geçmiş ----------
+async function loadHistory() {
+  let list = [];
+  try { list = await api("/api/reports"); } catch (e) { return; }
+  if (!list.length) { $("#hist").innerHTML = `<div class="faint small">Henüz rapor yok.</div>`; return; }
+  $("#hist").innerHTML = list.slice(0, 14).map((r) => `
+    <button class="hrow" type="button" data-f="${esc(r.file)}">
+      <span class="ht">${esc(new Date(r.created_at).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }))}</span>
+      <span class="hid">${esc(r.round_id)}</span>
+      <span class="hl">${r.injected ? '<span style="color:var(--amber)">ENJEKTE</span>' : ""}${r.cached ? '<span style="color:var(--violet)">KAYITLI</span>' : ""}${r.dryRun ? '<span style="color:var(--blue)">DRY_RUN</span>' : ""}${r.exec === "SENT" ? '<span style="color:var(--green)">GÖNDERİLDİ</span>' : ""}</span>
+      <span class="lv ${esc(r.level)}">${esc(LEVEL_TR[r.level] || r.level)}</span>
+    </button>`).join("");
+  $$("#hist .hrow").forEach((b) => b.addEventListener("click", () => viewReport(b.dataset.f)));
+}
+async function viewReport(file) {
+  if (S.running) { toast("Koşu sürerken geçmiş tur açılmaz."); return; }
+  const r = await api("/api/reports/" + encodeURIComponent(file));
+  if (!r || !r.round_id) return;
+  resetAll();
+  $("#runTitle").innerHTML = `<span class="dot" style="color:var(--violet)"></span>Kayıtlı tur · ${esc(r.round_id)}`;
+  $("#runCmd").textContent = `reports/${file} · ${new Date(r.created_at).toLocaleString("tr-TR")}`;
+  const inj = /-INJ-(drop|whipsaw|spike|volume)$/.exec(r.round_id)?.[1];
+  if (inj) { try { drawChart(await api("/api/demo-candles?inject=" + inj)); } catch (e) {} }
+  else $("#chart").innerHTML = `<div class="chart-empty">Bu anlık turun mum penceresi raporda saklanmaz. Kanıt kimlikleri agent kartlarında.</div>`;
+  setStage("data", "done", inj ? "kayıttan" : "OKX anlık");
+  onReport(r, { full: true });
+  termLine("", "", "Kayıtlı rapordan gösteriliyor; sistem şu an çalışmıyor.", "banner");
+  document.getElementById("lab").scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+}
+
+// ---------- Değerlendirme ----------
+async function loadEval() {
+  let e = null;
+  try { e = await api("/api/evaluation"); } catch (x) {}
+  if (!e || !e.byLevel) { $("#evalTbl").innerHTML = `<tr><td class="faint">Değerlendirme sonucu bulunamadı (npm run evaluate).</td></tr>`; return; }
+  const H = e.criteria?.HORIZONS || [15, 60];
+  const fr = (a, b) => (b ? `${a}/${b}` : "—");
+  const rows = ["YUKSEK", "ORTA", "BELIRSIZ"].map((lv) => {
+    const x = e.byLevel[lv] || { n: 0, claimed: 0, hit15: 0, hit60: 0, calmAlarms: 0 };
+    return `<tr><td><span class="lv ${lv}">${LEVEL_TR[lv]}</span></td><td>${x.n}</td><td>${x.claimed}</td><td>${fr(x.hit15, x.claimed)}</td><td>${fr(x.hit60, x.claimed)}</td><td>${x.calmAlarms}</td></tr>`;
+  }).join("");
+  $("#evalTbl").innerHTML = `<tr><th>Uyum</th><th>Pencere</th><th>Anomali iddiası</th><th>Hareket sürdü (${H[0]} dk)</th><th>Hareket sürdü (${H[1]} dk)</th><th>Yanlış alarm (sakin piyasada)</th></tr>${rows}`;
+  const errs = e.byLevel.agentError || 0;
+  $("#evalNote").innerHTML = `Toplam <b>${e.windows}</b> pencere (olay + sakin) · agent hatası ${errs} · mod: ${esc(e.mode === "cached" ? "kayıtlı yanıtlar" : e.mode)}. <b>Küçük örneklem:</b> bu tablo kanıt değil, yön göstergesidir. "Hareket sürdü" = sonraki dakikalarda volatilite veya fiyat değişimi pencere öncesi tabana göre anlamlı biçimde arttı.`;
+}
+
+// ---------- Başlat ----------
+S.agents = {}; S.labels = new Set(); S.injected = new Set(); S.pulses = [];
+(async () => {
+  await loadStatus();
+  agentShell("ATLAS");
+  agentShell("ARGUS");
+  // ?report=<dosya>: kayıtlı turu doğrudan göster (paylaşılabilir link; canlı akışa bağlanmaz)
+  const rep = new URLSearchParams(location.search).get("report");
+  if (rep) viewReport(rep); else if (!STATIC) connect();
+  if (STATIC) {
+    ["#symSel", "#stopBtn", "#killBtn"].forEach((s) => ($(s).style.display = "none"));
+    $$(".scen").forEach((b) => {
+      if (RECORDED.includes(b.dataset.sc)) return;
+      b.style.opacity = ".55";
+      b.querySelector(".d").textContent = "Yalnızca yerel kurulumda: gerçek sistem ve anahtarlar gerekir.";
+    });
+  }
+  loadHistory();
+  loadEval();
+  setInterval(() => { if (!S.running) loadStatus(); }, 6000);
+})();
+</script>
+</body>
+</html>

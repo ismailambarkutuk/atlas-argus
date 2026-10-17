@@ -167,7 +167,7 @@ section { padding: 56px 0; }
 .scen .t { font-weight: 700; font-size: 14.5px; margin: 2px 0; }
 .scen .d { font-size: 12.5px; color: var(--muted); }
 .scen .tag-live { position: absolute; top: 10px; right: 12px; }
-.side-ctl { display: flex; flex-direction: column; gap: 8px; min-width: 240px; }
+.side-ctl { display: flex; flex-direction: column; gap: 8px; min-width: 240px; max-width: 300px; }
 .side-ctl .row { display: flex; gap: 8px; }
 select.sel { height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: 600 13px var(--font); padding: 0 10px; }
 .stop-btn { height: 36px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--red) 45%, var(--border)); background: var(--red-bg); color: var(--red); font: 700 13px var(--font); padding: 0 14px; cursor: pointer; flex: 1; }
@@ -790,7 +790,30 @@ function toast(msg) {
   clearTimeout(toast.t);
   toast.t = setTimeout(() => t.classList.remove("on"), 3200);
 }
+// Vitrin modu (GitHub Pages): sunucu yok, anahtar yok; kayıtlı gerçek koşular oynatılır
+const STATIC = !!window.AA_STATIC;
+const RECORDED = ["drop", "diverge", "kill"];
+async function staticApi(path, body) {
+  if (body !== undefined) {
+    if (path === "/api/run" && RECORDED.includes(body.scenario)) return playRecorded(body.scenario);
+    return { ok: false, error: "Bu mod gerçek sistemi çalıştırır; yalnızca yerel kurulumda (npm run ui) kullanılabilir." };
+  }
+  const q = new URLSearchParams(path.split("?")[1] || "");
+  const p = path.split("?")[0];
+  const file = p === "/api/status" ? "data/status.json" : p === "/api/reports" ? "data/reports.json" : p === "/api/evaluation" ? "data/evaluation.json"
+    : p.startsWith("/api/reports/") ? "data/reports/" + p.slice("/api/reports/".length) : p === "/api/demo-candles" ? `data/candles-${q.get("inject")}.json` : null;
+  if (!file) return null;
+  const r = await fetch(file);
+  return r.ok ? r.json() : null;
+}
+async function playRecorded(sc) {
+  const txt = await (await fetch(`data/runs/${sc}.jsonl`)).text();
+  S.paced = true;
+  txt.split("\n").filter(Boolean).forEach((l) => enqueue(JSON.parse(l)));
+  return { ok: true };
+}
 async function api(path, body) {
+  if (STATIC) return staticApi(path, body);
   const opt = body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json", "X-Atlas-Argus": "1" }, body: JSON.stringify(body) };
   const r = await fetch(path, opt);
   return r.json();
@@ -853,6 +876,12 @@ async function loadStatus() {
     `<span class="pill">ARGUS · ${esc(ST.argus.provider)}/${esc(ST.argus.model)}</span>`,
   ].join("");
   setRunning(!!ST.running, ST.running?.scenario);
+  if (STATIC) {
+    $("#statusRow").innerHTML = `<span class="pill violet"><span class="dot"></span>VİTRİN · Fuji'de mühürlenmiş gerçek koşuların kaydı oynatılır, emir yok</span>` +
+      `<span class="pill">ATLAS · ${esc(ST.atlas.provider)}</span><span class="pill">ARGUS · ${esc(ST.argus.provider)}</span><span class="pill violet">Mühür: ${esc(provName)}</span>`;
+    $("#sideNote").textContent = "Vitrin: Senaryo 1–3, sistemin gerçek bir koşusunun kaydını adım adım oynatır. Canlı modlar yalnızca yerel kurulumda (npm run ui) çalışır.";
+    return;
+  }
   if (!ST.running) $("#sideNote").textContent = `Pencere ${ST.thresholds.window} mum · tetik: fiyat |z| ≥ ${ST.thresholds.triggerPriceZ} ya da hacim z ≥ ${ST.thresholds.triggerVolumeZ}`;
 }
 function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : "—"; }
@@ -1399,7 +1428,7 @@ async function pump() {
     const ev = queue.shift();
     let d = 0;
     try { d = handle(ev) || 0; } catch (e) { console.error(e); }
-    if (queue.length > 40 || reduced) d = 0; // sayfa yenilendiyse geride kalanı hızlı yakala
+    if ((queue.length > 40 && !S.paced) || reduced) d = 0; // sayfa yenilendiyse geride kalanı hızlı yakala
     if (d) await sleep(d);
   }
   pumping = false;
@@ -1415,6 +1444,7 @@ function handle(ev) {
       $("#runCmd").textContent = "$ " + ev.command;
       if (ev.scenario === "live" || ev.scenario === "watch") addLabel("CANLI VERİ");
       if (ev.scenario === "drop-live") addLabel("CANLI LLM");
+      if (STATIC) addLabel("KAYITLI KOŞU");
       setStage("data", "active", "yükleniyor");
       return 300;
     case "candles": drawChart(ev.data); return 500;
@@ -1426,6 +1456,7 @@ function handle(ev) {
     case "report": onReport(ev.data); return 400;
     case "exit":
       S.running = false;
+      S.paced = false;
       setRunning(false);
       STAGES.forEach((s) => { if (node(s).dataset.s === "active") setStage(s, ev.code === 0 || ev.code === null ? "done" : "fail", ev.code === 0 || ev.code === null ? undefined : "durdu"); });
       $("#runTitle").innerHTML = `<span class="dot" style="color:${ev.code === 0 ? "var(--green)" : "var(--faint)"}"></span>${esc($("#runTitle").textContent)} · bitti`;
@@ -1526,7 +1557,15 @@ S.agents = {}; S.labels = new Set(); S.injected = new Set(); S.pulses = [];
   agentShell("ARGUS");
   // ?report=<dosya>: kayıtlı turu doğrudan göster (paylaşılabilir link; canlı akışa bağlanmaz)
   const rep = new URLSearchParams(location.search).get("report");
-  if (rep) viewReport(rep); else connect();
+  if (rep) viewReport(rep); else if (!STATIC) connect();
+  if (STATIC) {
+    ["#symSel", "#stopBtn", "#killBtn"].forEach((s) => ($(s).style.display = "none"));
+    $$(".scen").forEach((b) => {
+      if (RECORDED.includes(b.dataset.sc)) return;
+      b.style.opacity = ".55";
+      b.querySelector(".d").textContent = "Yalnızca yerel kurulumda: gerçek sistem ve anahtarlar gerekir.";
+    });
+  }
   loadHistory();
   loadEval();
   setInterval(() => { if (!S.running) loadStatus(); }, 6000);
