@@ -63,12 +63,12 @@ export async function runAtlas(input: AgentInput, mode: AgentMode): Promise<Agen
   const hash = inputHash(AGENT, "initial", systemPrompt(AGENT), user);
   try {
     log.agent(AGENT, `analiz başladı (${mode === "cached" ? "KAYITLI YANIT" : `${LLM.provider}/${LLM.model}`})`);
-    const { raw, cached } = await callOrReplay(
+    const { raw, cached, model } = await callOrReplay(
       mode,
       { agent: AGENT, phase: "initial", round_id: input.round_id, input_hash: hash, model: LLM.model },
       () => callLlm([{ role: "user", content: user }]),
     );
-    return outcomeFromRaw(raw, AGENT, input, { phase: "initial", cached, model: LLM.model, durationMs: Date.now() - started });
+    return outcomeFromRaw(raw, AGENT, input, { phase: "initial", cached, model, durationMs: Date.now() - started });
   } catch (e) {
     return failedOutcome(AGENT, "initial", LLM.model, started, errMsg(e));
   }
@@ -89,7 +89,7 @@ export async function runAtlasDispute(input: AgentInput, previous: AgentOutcome,
   const hash = inputHash(AGENT, "dispute", systemPrompt(AGENT), user, previous.raw, followUp);
   try {
     log.agent(AGENT, `uyuşmazlık turu: yalnızca "${fields.join(", ")}" alanında ayrışıldığı bildirildi`);
-    const { raw, cached } = await callOrReplay(
+    const { raw, cached, model } = await callOrReplay(
       mode,
       { agent: AGENT, phase: "dispute", round_id: input.round_id, input_hash: hash, model: LLM.model },
       () =>
@@ -99,7 +99,7 @@ export async function runAtlasDispute(input: AgentInput, previous: AgentOutcome,
           { role: "user", content: followUp },
         ]),
     );
-    return outcomeFromRaw(raw, AGENT, input, { phase: "dispute", cached, model: LLM.model, durationMs: Date.now() - started });
+    return outcomeFromRaw(raw, AGENT, input, { phase: "dispute", cached, model, durationMs: Date.now() - started });
   } catch (e) {
     return failedOutcome(AGENT, "dispute", LLM.model, started, errMsg(e));
   }

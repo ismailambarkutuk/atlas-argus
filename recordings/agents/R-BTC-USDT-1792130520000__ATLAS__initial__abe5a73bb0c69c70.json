@@ -1,0 +1,9 @@
+{
+  "agent": "ATLAS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792130520000",
+  "input_hash": "abe5a73bb0c69c70",
+  "model": "gemini-3.8-flash",
+  "raw_text": "{\"agent\":\"ATLAS\",\"round_id\":\"t-8be782cff6\",\"symbol\":\"BTC-USDT\",\"anomaly\":false,\"type\":\"none\",\"direction\":\"none\",\"severity\":0.0,\"confidence\":0.92,\"evidence\":[{\"record_id\":\"r-0060\",\"note\":\"Son mumda fiyat 82138.9'dan 82097.3'e gerilemiş, hacim ise 1.60 BTC ile olağan seviyelerde kalmıştır.\"}],\"explanation\":\"Son mumda ve yakın periyotta sert fiyat kırılması ya da hacim patlaması bulunmamakta, hareketler normal piyasa dalgalanması sınırları içinde seyretmektedir.\"}",
+  "recorded_at": "2026-10-17T10:34:27.108Z"
+}

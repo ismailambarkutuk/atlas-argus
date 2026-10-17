@@ -7,7 +7,7 @@ import path from "node:path";
 import { ROOT, log, isMain } from "../util.js";
 import type { AgentName } from "./schema.js";
 
-export type AgentMode = "call" | "record" | "cached";
+export type AgentMode = "call" | "record" | "cached" | "resume";
 export const AGENT_CACHE_DIR = path.join(ROOT, "recordings", "agents");
 
 interface CachedResponse {
@@ -54,23 +54,24 @@ export function saveCached(r: Omit<CachedResponse, "recorded_at">): string {
  * - cached: yalnızca kayıttan; yoksa hata (gerçek çağrı yapılmaz)
  * - record: gerçek çağrı + kayıt
  * - call:   gerçek çağrı
+ * - resume: kayıt varsa onu kullan, yoksa gerçek çağrı + kayıt (yarım kalan değerlendirme için)
  */
 export async function callOrReplay(
   mode: AgentMode,
   meta: { agent: AgentName; phase: string; round_id: string; input_hash: string; model: string },
   call: () => Promise<string>,
-): Promise<{ raw: string; cached: boolean }> {
-  if (mode === "cached") {
+): Promise<{ raw: string; cached: boolean; model: string }> {
+  if (mode === "cached" || mode === "resume") {
     const hit = loadCached(meta.agent, meta.phase, meta.round_id, meta.input_hash);
-    if (!hit) throw new Error(`KAYITLI YANIT bulunamadı (${meta.agent}/${meta.phase}/${meta.round_id}/${meta.input_hash}); --record-agents ile kaydedin`);
-    return { raw: hit.raw_text, cached: true };
+    if (hit) return { raw: hit.raw_text, cached: true, model: hit.model };
+    if (mode === "cached") throw new Error(`KAYITLI YANIT bulunamadı (${meta.agent}/${meta.phase}/${meta.round_id}/${meta.input_hash}); --record-agents ile kaydedin`);
   }
   const raw = await call();
-  if (mode === "record") {
+  if (mode === "record" || mode === "resume") {
     const f = saveCached({ ...meta, raw_text: raw });
     log.info(meta.agent, `yanıt kaydedildi → ${path.relative(ROOT, f)}`);
   }
-  return { raw, cached: false };
+  return { raw, cached: false, model: meta.model };
 }
 
 // Demo: npx tsx src/agents/cache.ts  → kayıtlı yanıtları listeler

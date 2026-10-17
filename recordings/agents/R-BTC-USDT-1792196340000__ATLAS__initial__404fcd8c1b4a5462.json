@@ -1,0 +1,9 @@
+{
+  "agent": "ATLAS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792196340000",
+  "input_hash": "404fcd8c1b4a5462",
+  "model": "gemini-3.5-flash",
+  "raw_text": "{\"agent\":\"ATLAS\",\"round_id\":\"t-078fcc3451\",\"symbol\":\"BTC-USDT\",\"anomaly\":true,\"type\":\"price_drop\",\"direction\":\"down\",\"severity\":0.35,\"confidence\":0.82,\"evidence\":[{\"record_id\":\"r-0060\",\"note\":\"Fiyat 81638.4 seviyesinden 81590.0 seviyesine %0.06 oranında ani bir düşüş yaşadı.\"},{\"record_id\":\"r-0059\",\"note\":\"Son mum öncesindeki konsolidasyon kapanış seviyesi 81638.4 idi.\"}],\"explanation\":\"Son mumda (r-0060) önceki dakikalardaki dar bantta seyreden konsolidasyon kırılarak fiyatta hızlı bir gerileme kaydedilmiştir.\"}",
+  "recorded_at": "2026-10-17T10:39:16.975Z"
+}

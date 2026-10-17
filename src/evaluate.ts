@@ -3,7 +3,8 @@
 // sonuna kadarki veriyi görür. Enjekte veri değerlendirmeye dahil edilmez.
 //
 // npx tsx src/evaluate.ts [--data recordings/eval_x.jsonl] [--symbol BTC-USDT] [--count 3000]
-//                         [--events 10] [--calm 10] [--stats-only] [--cached|--record-agents]
+//                         [--events 10] [--calm 10] [--stats-only] [--cached|--record-agents|--resume]
+//                         [--delay 8000]  (pencereler arası bekleme, ücretsiz API limitleri için)
 import fs from "node:fs";
 import path from "node:path";
 import { config } from "./config.js";
@@ -41,6 +42,9 @@ interface EvalWindow {
   level?: Level;
   claimedAnomaly?: boolean;
   agreedType?: string;
+  /** agent çağrısı teknik olarak başarısız (limit, ağ): uyum tablosundan hariç tutulur */
+  agentError?: boolean;
+  models?: string[];
   notes: string[];
 }
 
@@ -120,7 +124,8 @@ function table(title: string, rows: string[][]): void {
 
 async function main(): Promise<void> {
   const { flags, values } = parseArgs(process.argv.slice(2));
-  const mode: AgentMode = flags.has("cached") ? "cached" : flags.has("record-agents") ? "record" : "call";
+  const mode: AgentMode = flags.has("cached") ? "cached" : flags.has("resume") ? "resume" : flags.has("record-agents") ? "record" : "call";
+  const delayMs = Number(values.get("delay") ?? 8000);
   const statsOnly = flags.has("stats-only");
   const nEvents = Number(values.get("events") ?? 10);
   const nCalm = Number(values.get("calm") ?? 10);
@@ -165,14 +170,24 @@ async function main(): Promise<void> {
       log.info("DEĞERLENDİRME", `[${k + 1}/${windows.length}] ${w.kind} ${c.iso}`);
       try {
         const [a, b] = await Promise.all([runAtlas(input, mode), runArgus(input, mode)]);
+        w.models = [a, b].map((o) => `${o.agent}:${o.model}${o.cached ? " (kayıt)" : ""}`);
+        // Çağrı hiç yanıt üretmediyse (limit/ağ hatası) bu, modelin kararı değildir: hariç tut
+        if ([a, b].some((o) => !o.ok && o.raw === undefined)) {
+          w.agentError = true;
+          for (const o of [a, b]) if (!o.ok) w.notes.push(`${o.agent}: ${o.errors.join("; ")}`);
+          log.warn("DEĞERLENDİRME", `  agent hatası → pencere hariç: ${w.notes.join(" | ").slice(0, 160)}`);
+          continue;
+        }
         const cmp = compareInitial(a.finding ?? null, b.finding ?? null, w.signals);
         // Değerlendirmede uyuşmazlık turu çalıştırılmaz: ayrışma doğrudan belirsiz
         w.level = cmp.level;
         w.claimedAnomaly = cmp.level !== "BELIRSIZ" && !!cmp.agreed?.anomaly;
         w.agreedType = cmp.agreed?.type;
-        for (const o of [a, b]) if (!o.ok) w.notes.push(`${o.agent}: ${o.errors.join("; ")}`);
+        for (const o of [a, b]) if (!o.ok) w.notes.push(`${o.agent} geçersiz çıktı: ${o.errors.join("; ")}`);
+        log.info("DEĞERLENDİRME", `  → ${LEVEL_TR[cmp.level]}${cmp.agreed ? ` (${cmp.agreed.type})` : ""}`);
+        if (mode !== "cached" && [a, b].some((o) => !o.cached) && k < windows.length - 1) await new Promise((r) => setTimeout(r, delayMs));
       } catch (e) {
-        w.level = "BELIRSIZ";
+        w.agentError = true;
         w.notes.push(errMsg(e));
       }
     }
@@ -201,9 +216,13 @@ async function main(): Promise<void> {
       rows.push([LEVEL_TR[lv], String(g.length), String(claimed.length), pct(hit15, claimed.length), pct(hit60, claimed.length), pct(claimed.length - hit60, claimed.length), String(calmAlarms)]);
       byLevel[lv] = { n: g.length, claimed: claimed.length, hit15, hit60, falseAlarm60: claimed.length - hit60, calmAlarms };
     }
-    table("Uyum seviyesine göre isabet ve yanlış alarm", rows);
-    const failed = windows.filter((w) => w.notes.length).length;
-    if (failed) log.warn("DEĞERLENDİRME", `${failed} pencerede agent hatası/geçersiz çıktı vardı (belirsiz sayıldı)`);
+    const errored = windows.filter((w) => w.agentError);
+    rows.push(["agent hatası (hariç)", String(errored.length), "-", "-", "-", "-", "-"]);
+    byLevel.agentError = errored.length;
+    const models = [...new Set(windows.flatMap((w) => w.models ?? []).map((m) => m.replace(" (kayıt)", "")))];
+    log.info("DEĞERLENDİRME", `Kullanılan modeller: ${models.join(", ")}`);
+    table("Uyum seviyesine göre isabet ve yanlış alarm (agent hatası olan pencereler hariç)", rows);
+    if (errored.length) log.warn("DEĞERLENDİRME", `${errored.length} pencerede agent çağrısı başarısız (limit/ağ); uyum tablosuna dahil edilmedi`);
   }
 
   const small = windows.length < 2 * SMALL_SAMPLE || ev.length < SMALL_SAMPLE || ca.length < SMALL_SAMPLE;

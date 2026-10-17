@@ -1,0 +1,9 @@
+{
+  "agent": "ARGUS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792172040000",
+  "input_hash": "38f45f3e58962d67",
+  "model": "openai/gpt-oss-120b",
+  "raw_text": "{\"agent\":\"ARGUS\",\"round_id\":\"t-d2af1d4ce5\",\"symbol\":\"BTC-USDT\",\"anomaly\":true,\"type\":\"price_spike\",\"direction\":\"up\",\"severity\":0.9,\"confidence\":0.96,\"evidence\":[{\"record_id\":\"r-0060\",\"note\":\"1 dakikalık çubukta fiyat 81071.6'dan 81502.3'e yükselmiş, kapanış 81438.5, hacim 149.22 ile önceki dakikalara göre 10 kat artmış\"}],\"explanation\":\"Son dakika çubuğu ani fiyat artışı ve aşırı hacim artışı gösteriyor, bu bir fiyat yükselişi (spike) anomalisidir.\"}",
+  "recorded_at": "2026-10-17T10:38:45.753Z"
+}

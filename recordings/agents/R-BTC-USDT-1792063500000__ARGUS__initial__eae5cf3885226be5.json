@@ -1,0 +1,9 @@
+{
+  "agent": "ARGUS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792063500000",
+  "input_hash": "eae5cf3885226be5",
+  "model": "openai/gpt-oss-120b",
+  "raw_text": "{\"agent\":\"ARGUS\",\"round_id\":\"t-843202c2be\",\"symbol\":\"BTC-USDT\",\"anomaly\":false,\"type\":\"none\",\"direction\":\"none\",\"severity\":0.0,\"confidence\":0.92,\"evidence\":[],\"explanation\":\"Son birkaç dakikada (r-0051 - r-0060) fiyat hareketi ve hacimde belirgin bir artış ya da ani bir düşüş gözlemlenmedi; fiyatlar dar bir band içinde seyretti ve hacimler ortalama seviyelerdeydi.\"}",
+  "recorded_at": "2026-10-17T10:32:54.812Z"
+}

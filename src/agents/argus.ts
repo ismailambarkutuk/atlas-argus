@@ -27,12 +27,12 @@ export async function runArgus(input: AgentInput, mode: AgentMode): Promise<Agen
   const hash = inputHash(AGENT, "initial", systemPrompt(AGENT), user);
   try {
     log.agent(AGENT, `analiz başladı (${mode === "cached" ? "KAYITLI YANIT" : `${LLM.provider}/${LLM.model || "model yok"}`})`);
-    const { raw, cached } = await callOrReplay(
+    const { raw, cached, model } = await callOrReplay(
       mode,
       { agent: AGENT, phase: "initial", round_id: input.round_id, input_hash: hash, model: LLM.model },
       () => callLlm(user),
     );
-    return outcomeFromRaw(raw, AGENT, input, { phase: "initial", cached, model: LLM.model, durationMs: Date.now() - started });
+    return outcomeFromRaw(raw, AGENT, input, { phase: "initial", cached, model, durationMs: Date.now() - started });
   } catch (e) {
     return failedOutcome(AGENT, "initial", LLM.model, started, errMsg(e));
   }

@@ -1,0 +1,9 @@
+{
+  "agent": "ATLAS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792104660000",
+  "input_hash": "871d9397a379c15f",
+  "model": "gemini-3.5-flash",
+  "raw_text": "{\"agent\":\"ATLAS\",\"round_id\":\"t-6691d7f10b\",\"symbol\":\"BTC-USDT\",\"anomaly\":false,\"type\":\"none\",\"direction\":\"none\",\"severity\":0.0,\"confidence\":0.95,\"evidence\":[{\"record_id\":\"r-0060\",\"note\":\"Son mumda fiyat ve hacim hareketleri oldukça düşük ve olağan seyirdedir.\"}],\"explanation\":\"Son muma (r-0060) bakıldığında fiyat sadece ~10 USDT'lik dar bir bantta hareket etmiş, hacim ise düşük seviyede kalarak herhangi bir anomali oluşturmamıştır.\"}",
+  "recorded_at": "2026-10-17T10:39:40.690Z"
+}

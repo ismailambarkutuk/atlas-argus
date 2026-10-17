@@ -1,0 +1,9 @@
+{
+  "agent": "ARGUS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792138800000",
+  "input_hash": "08ca36f5e7b47026",
+  "model": "openai/gpt-oss-120b",
+  "raw_text": "{\"agent\":\"ARGUS\",\"round_id\":\"t-bbea376656\",\"symbol\":\"BTC-USDT\",\"anomaly\":true,\"type\":\"price_spike\",\"direction\":\"up\",\"severity\":0.6,\"confidence\":0.8,\"evidence\":[{\"record_id\":\"r-0060\",\"note\":\"Kapanış fiyatı 82165.7'den 82252.8'e %0.1 artış, hacim 0.75'ten 3.91'e yükseldi\"}],\"explanation\":\"Son dakikada fiyat ani yükseliş gösterdi ve hacim önceki düşük seviyelere kıyasla belirgin şekilde artış gösterdi.\"}",
+  "recorded_at": "2026-10-17T10:30:58.803Z"
+}

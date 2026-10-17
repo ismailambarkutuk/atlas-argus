@@ -1,0 +1,9 @@
+{
+  "agent": "ATLAS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792172040000",
+  "input_hash": "31f29853f9838829",
+  "model": "gemini-3.8-flash",
+  "raw_text": "{\"agent\":\"ATLAS\",\"round_id\":\"t-d2af1d4ce5\",\"symbol\":\"BTC-USDT\",\"anomaly\":true,\"type\":\"price_spike\",\"direction\":\"up\",\"severity\":0.88,\"confidence\":0.95,\"evidence\":[{\"record_id\":\"r-0060\",\"note\":\"Fiyat 81076.1 seviyesinden 81502.3 tepesine fırlamış, hacim 149.22 BTC ile son 60 dakikanın en yüksek seviyesine ulaşmıştır.\"},{\"record_id\":\"r-0059\",\"note\":\"Önceki mumda hacim sadece 7.35 BTC ve kapanış 81072.3 seviyesindedir.\"}],\"explanation\":\"Son 1 dakikalık mumda ortalama hacmin 20 katından fazla bir patlamayla birlikte fiyatta ani ve sert bir yukarı yönlü sıçrama gerçekleşmiştir.\"}",
+  "recorded_at": "2026-10-17T10:31:38.535Z"
+}

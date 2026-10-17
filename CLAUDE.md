@@ -40,8 +40,14 @@ olamadığında hiçbir şey yapmayan otonom sistem.
 - Node.js 18+, TypeScript, `npx tsx` ile çalıştırma (derleme adımı yok)
 - Geliştirme ortamı: Windows, PowerShell. Yollar için `path` modülü.
 - OKX Agent Trade Kit: `okx` CLI, child process ile çağrılır (aşağıya bak)
-- ATLAS LLM: Anthropic SDK (`@anthropic-ai/sdk`)
-- ARGUS LLM: OpenAI SDK (`openai`) — farklı sağlayıcı bilinçli bir seçim
+- LLM sağlayıcısı agent başına `.env`'den seçilir (`ATLAS_PROVIDER`, `ARGUS_PROVIDER`):
+  `anthropic` (Anthropic SDK) veya OpenAI uyumlu `openai` | `gemini` | `groq`
+  (`openai` SDK + baseURL, `src/agents/llm.ts`). ATLAS ve ARGUS **farklı
+  sağlayıcıda** olmalı — farklı sağlayıcı bilinçli bir seçim.
+- Hackathon kurulumu (ücretsiz katmanlar): ATLAS = Gemini (`gemini-3.5-flash`),
+  ARGUS = Groq (`openai/gpt-oss-120b`). Demo yanıtları `gemini-3.8-flash` ile
+  kaydedildi; o modelin günlük ücretsiz kotası dolduğu için canlı çağrılar 3.5'e geçti.
+- Bir sağlayıcının anahtarı yalnızca o sağlayıcının uç noktasına gider.
 - Hız için küçük/hızlı modeller tercih edilir
 - Zincir: Avalanche Fuji testnet (chainId 43113), `viem`
 - Yapılandırma: `dotenv`
@@ -190,6 +196,7 @@ Asıl soru: "Uyum yüksek bulgular gerçekten daha isabetli mi?"
 - `--inject <senaryo>`: replay'e etiketli yapay anomali ekler
 - `--record-agents`: agent yanıtlarını `recordings/agents/`'a kaydeder
 - `--cached`: kayıtlı agent yanıtlarını oynatır, raporda "KAYITLI YANIT" etiketiyle
+- `--resume` (evaluate): kayıtlı yanıt varsa kullanır, yoksa çağırıp kaydeder
 - Zaman aşımları cömert: LLM çağrısı başına 45 sn, zincir işlemi başına 60 sn.
   Ekranda her aşamanın ilerlemesi loglanır.
 - Gösterilecek üç senaryo, her biri tek komutla:
@@ -221,10 +228,14 @@ recordings/     kayıtlı piyasa verisi ve agent yanıtları
 
 ```
 DRY_RUN=1
-ANTHROPIC_API_KEY=
-OPENAI_API_KEY=
+ATLAS_PROVIDER=gemini
+ARGUS_PROVIDER=groq
 ATLAS_MODEL=
 ARGUS_MODEL=
+GEMINI_API_KEY=
+GROQ_API_KEY=
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
 LLM_TIMEOUT_MS=45000
 AVAX_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
 AVAX_PRIVATE_KEY=

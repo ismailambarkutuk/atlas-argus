@@ -1,0 +1,9 @@
+{
+  "agent": "ARGUS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792097400000",
+  "input_hash": "39928f024bda3567",
+  "model": "openai/gpt-oss-120b",
+  "raw_text": "{\"agent\":\"ARGUS\",\"round_id\":\"t-2e21fc825c\",\"symbol\":\"BTC-USDT\",\"anomaly\":true,\"type\":\"price_drop\",\"direction\":\"down\",\"severity\":0.8,\"confidence\":0.95,\"evidence\":[{\"record_id\":\"r-0060\",\"note\":\"Price fell from 82305.3 to 82178.2 (~0.28%) with volume 21.15, ~10‑12× prior minutes\"},{\"record_id\":\"r-0059\",\"note\":\"Previous minute volume 6.14, price stable around 82305\"}],\"explanation\":\"Son dakikada ani fiyat düşüşü ve hacim patlaması gözlendi, bu tipik bir fiyat düşüş anomalisidir.\"}",
+  "recorded_at": "2026-10-17T10:30:11.859Z"
+}

@@ -32,7 +32,7 @@ function positive(name: string, def: number): number {
 export const PROVIDERS = {
   anthropic: { keyEnv: "ANTHROPIC_API_KEY", baseURL: undefined, defaultModel: "claude-haiku-5-5" },
   openai: { keyEnv: "OPENAI_API_KEY", baseURL: undefined, defaultModel: "" },
-  gemini: { keyEnv: "GEMINI_API_KEY", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", defaultModel: "gemini-3.8-flash" },
+  gemini: { keyEnv: "GEMINI_API_KEY", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/", defaultModel: "gemini-3.5-flash" },
   groq: { keyEnv: "GROQ_API_KEY", baseURL: "https://api.groq.com/openai/v1", defaultModel: "openai/gpt-oss-120b" },
 } as const;
 export type ProviderName = keyof typeof PROVIDERS;

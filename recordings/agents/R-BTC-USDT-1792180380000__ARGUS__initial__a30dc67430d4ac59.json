@@ -1,0 +1,9 @@
+{
+  "agent": "ARGUS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792180380000",
+  "input_hash": "a30dc67430d4ac59",
+  "model": "openai/gpt-oss-120b",
+  "raw_text": "{\"agent\":\"ARGUS\",\"round_id\":\"t-6b369da67c\",\"symbol\":\"BTC-USDT\",\"anomaly\":true,\"type\":\"volume_spike\",\"direction\":\"up\",\"severity\":0.6,\"confidence\":0.9,\"evidence\":[{\"record_id\":\"r-0057\",\"note\":\"Hacim 11.26, önceki dakikaların 3‑5 katı, fiyat hafif (+0.025%) yükseldi\"},{\"record_id\":\"r-0056\",\"note\":\"Önceki hacim 6.33, ani artış\"}],\"explanation\":\"Son dakika hacimde belirgin artış, fiyat hareketi sınırlı olduğundan hacim patlaması olarak değerlendirildi\"}",
+  "recorded_at": "2026-10-17T10:40:22.633Z"
+}

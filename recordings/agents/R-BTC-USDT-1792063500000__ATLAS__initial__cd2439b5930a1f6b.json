@@ -1,0 +1,9 @@
+{
+  "agent": "ATLAS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792063500000",
+  "input_hash": "cd2439b5930a1f6b",
+  "model": "gemini-3.8-flash",
+  "raw_text": "{\"agent\":\"ATLAS\",\"round_id\":\"t-843202c2be\",\"symbol\":\"BTC-USDT\",\"anomaly\":false,\"type\":\"none\",\"direction\":\"none\",\"severity\":0.0,\"confidence\":0.95,\"evidence\":[],\"explanation\":\"Son mumda ve yakın geçmişteki mumlarda kayda değer bir fiyat hareketi veya hacim patlaması bulunmamakta, piyasa olağan dalgalanma bandında hareket etmektedir.\"}",
+  "recorded_at": "2026-10-17T10:32:32.606Z"
+}

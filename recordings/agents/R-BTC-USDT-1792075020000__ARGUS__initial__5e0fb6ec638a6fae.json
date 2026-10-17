@@ -1,0 +1,9 @@
+{
+  "agent": "ARGUS",
+  "phase": "initial",
+  "round_id": "R-BTC-USDT-1792075020000",
+  "input_hash": "5e0fb6ec638a6fae",
+  "model": "openai/gpt-oss-120b",
+  "raw_text": "{\"agent\":\"ARGUS\",\"round_id\":\"t-0d878dca7f\",\"symbol\":\"BTC-USDT\",\"anomaly\":false,\"type\":\"none\",\"direction\":\"none\",\"severity\":0.0,\"confidence\":0.94,\"evidence\":[],\"explanation\":\"Son 10 dakikalık (r-0051 - r-0060) kapanış fiyatları ve hacimler normal aralıkta, ani fiyat yükselişi, düşüşü veya hacim patlaması yoktur.\"}",
+  "recorded_at": "2026-10-17T10:33:23.668Z"
+}
