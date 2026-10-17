@@ -1,0 +1,7 @@
+{
+  "BTC-USDT": {
+    "instId": "BTC-USDT",
+    "lotSz": "0.00000001",
+    "minSz": "0.00001"
+  }
+}

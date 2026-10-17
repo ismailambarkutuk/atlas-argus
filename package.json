@@ -1,0 +1,30 @@
+{
+  "name": "atlas-argus",
+  "version": "1.0.0",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "collect": "tsx src/data/collector.ts --symbol BTC-USDT --count 300",
+    "demo:drop": "tsx src/main.ts --replay recordings/BTC-USDT_demo.jsonl --inject drop --cached",
+    "demo:diverge": "tsx src/main.ts --replay recordings/BTC-USDT_demo.jsonl --inject whipsaw --cached",
+    "demo:kill": "tsx src/main.ts --replay recordings/BTC-USDT_demo.jsonl --inject drop --cached --kill",
+    "record:drop": "tsx src/main.ts --replay recordings/BTC-USDT_demo.jsonl --inject drop --record-agents",
+    "record:diverge": "tsx src/main.ts --replay recordings/BTC-USDT_demo.jsonl --inject whipsaw --record-agents",
+    "evaluate": "tsx src/evaluate.ts --data recordings/eval_BTC-USDT_1792047240000_1792227180000.jsonl"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Bağımsız doğrulamalı kripto koruma agent'ı (ATLAS–ARGUS)",
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
+    "dotenv": "^18.0.8",
+    "openai": "^7.36.0",
+    "viem": "^2.57.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
