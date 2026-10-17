@@ -4,7 +4,7 @@ import OpenAI from "openai";
 import { config } from "../config.js";
 import { log, errMsg, withTimeout, isMain } from "../util.js";
 import { AgentMode, callOrReplay, inputHash } from "./cache.js";
-import { AgentInput, AgentOutcome, dataPrompt, failedOutcome, outcomeFromRaw, systemPrompt, validationContext } from "./schema.js";
+import { AgentInput, AgentOutcome, dataPrompt, failedOutcome, outcomeFromRaw, systemPrompt } from "./schema.js";
 
 const AGENT = "ARGUS" as const;
 
@@ -44,7 +44,7 @@ export async function runArgus(input: AgentInput, mode: AgentMode): Promise<Agen
       { agent: AGENT, phase: "initial", round_id: input.round_id, input_hash: hash, model: config.argusModel },
       () => callOpenAI(user),
     );
-    return outcomeFromRaw(raw, validationContext(AGENT, input), { phase: "initial", cached, model: config.argusModel, durationMs: Date.now() - started });
+    return outcomeFromRaw(raw, AGENT, input, { phase: "initial", cached, model: config.argusModel, durationMs: Date.now() - started });
   } catch (e) {
     return failedOutcome(AGENT, "initial", config.argusModel, started, errMsg(e));
   }

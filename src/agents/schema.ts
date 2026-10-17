@@ -1,5 +1,6 @@
 // Bulgu şeması (ATLAS ve ARGUS aynı formatı döndürür), kodla doğrulama ve
 // iki agent'a giden ORTAK ham veri istemi. Hazır istatistik değerleri agent'lara verilmez.
+import crypto from "node:crypto";
 import { isMain, log } from "../util.js";
 import type { Candle } from "../data/types.js";
 
@@ -136,12 +137,42 @@ export function validateFinding(obj: unknown, ctx: ValidationContext): { ok: tru
   return errors.length ? { ok: false, errors } : { ok: true, finding: o as unknown as Finding };
 }
 
+/**
+ * Agent'ların gördüğü opak kimlikler. Gerçek record_id, round_id ve injected bilgisi
+ * yalnızca içeride kalır; agent'a pencere sırasına göre r-0001… ve opak bir tur kimliği gider.
+ */
+export interface AgentView {
+  roundId: string;
+  toOpaque: Map<string, string>;
+  toReal: Map<string, string>;
+}
+
+export function agentView(input: AgentInput): AgentView {
+  const toOpaque = new Map<string, string>();
+  const toReal = new Map<string, string>();
+  input.window.forEach((c, i) => {
+    const id = `r-${String(i + 1).padStart(4, "0")}`;
+    toOpaque.set(c.record_id, id);
+    toReal.set(id, c.record_id);
+  });
+  const roundId = `t-${crypto.createHash("sha256").update(input.round_id).digest("hex").slice(0, 10)}`;
+  return { roundId, toOpaque, toReal };
+}
+
+/** Agent'ın döndürdüğü opak kimlikleri gerçek kimliklere çevirir (doğrulamadan SONRA). */
+function toInternal(f: Finding, input: AgentInput, view: AgentView): Finding {
+  return { ...f, round_id: input.round_id, evidence: f.evidence.map((e) => ({ ...e, record_id: view.toReal.get(e.record_id)! })) };
+}
+
 /** Ham metni ayrıştırıp doğrular; her hata (geçersiz JSON dahil) ok=false yani belirsizdir. */
 export function outcomeFromRaw(
   raw: string,
-  ctx: ValidationContext,
+  agent: AgentName,
+  input: AgentInput,
   meta: { phase: AgentOutcome["phase"]; cached: boolean; model: string; durationMs: number },
 ): AgentOutcome {
+  const view = agentView(input);
+  const ctx = validationContext(agent, input, view);
   let parsed: unknown;
   try {
     parsed = parseFindingText(raw);
@@ -150,7 +181,7 @@ export function outcomeFromRaw(
   }
   const v = validateFinding(parsed, ctx);
   return v.ok
-    ? { agent: ctx.agent, ...meta, ok: true, finding: v.finding, errors: [], raw }
+    ? { agent: ctx.agent, ...meta, ok: true, finding: toInternal(v.finding, input, view), errors: [], raw }
     : { agent: ctx.agent, ...meta, ok: false, errors: v.errors, raw };
 }
 
@@ -158,8 +189,9 @@ export function failedOutcome(agent: AgentName, phase: AgentOutcome["phase"], mo
   return { agent, phase, ok: false, errors: [error], cached: false, model, durationMs: Date.now() - started };
 }
 
-export function validationContext(agent: AgentName, input: AgentInput): ValidationContext {
-  return { agent, round_id: input.round_id, symbol: input.symbol, validRecordIds: new Set(input.window.map((c) => c.record_id)) };
+/** Doğrulama agent'ın gördüğü (opak) kimliklerle yapılır. */
+export function validationContext(agent: AgentName, input: AgentInput, view = agentView(input)): ValidationContext {
+  return { agent, round_id: view.roundId, symbol: input.symbol, validRecordIds: new Set(view.toReal.keys()) };
 }
 
 // --- Ortak istem (iki agent'a da birebir aynısı gider) ---
@@ -181,13 +213,14 @@ export function systemPrompt(agent: AgentName): string {
   ].join("\n");
 }
 
-/** Ham pencere: yalnızca mum verisi ve record_id; hesaplanmış istatistik yok. */
+/** Ham pencere: yalnızca mum verisi ve opak record_id; hesaplanmış istatistik ve injected bilgisi yok. */
 export function dataPrompt(input: AgentInput): string {
+  const view = agentView(input);
   const rows = input.window.map(
-    (c) => `${c.record_id},${c.iso},${c.open},${c.high},${c.low},${c.close},${c.vol}`,
+    (c) => `${view.toOpaque.get(c.record_id)},${c.iso},${c.open},${c.high},${c.low},${c.close},${c.vol}`,
   );
   return [
-    `round_id: ${input.round_id}`,
+    `round_id: ${view.roundId}`,
     `symbol: ${input.symbol}`,
     `mum sayısı: ${input.window.length} (eskiden yeniye, 1m, kapanmış)`,
     "record_id,zaman_utc,acilis,yuksek,dusuk,kapanis,hacim",

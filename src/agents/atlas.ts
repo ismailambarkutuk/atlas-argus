@@ -9,12 +9,12 @@ import {
   AgentOutcome,
   FINDING_JSON_SCHEMA,
   Finding,
+  agentView,
   dataPrompt,
   disputePrompt,
   failedOutcome,
   outcomeFromRaw,
   systemPrompt,
-  validationContext,
 } from "./schema.js";
 
 const AGENT = "ATLAS" as const;
@@ -55,7 +55,7 @@ export async function runAtlas(input: AgentInput, mode: AgentMode): Promise<Agen
       { agent: AGENT, phase: "initial", round_id: input.round_id, input_hash: hash, model: config.atlasModel },
       () => callClaude([{ role: "user", content: user }]),
     );
-    return outcomeFromRaw(raw, validationContext(AGENT, input), { phase: "initial", cached, model: config.atlasModel, durationMs: Date.now() - started });
+    return outcomeFromRaw(raw, AGENT, input, { phase: "initial", cached, model: config.atlasModel, durationMs: Date.now() - started });
   } catch (e) {
     return failedOutcome(AGENT, "initial", config.atlasModel, started, errMsg(e));
   }
@@ -70,7 +70,9 @@ export async function runAtlasDispute(input: AgentInput, previous: AgentOutcome,
   if (!previous.ok || !previous.finding || !previous.raw) return failedOutcome(AGENT, "dispute", config.atlasModel, started, "önceki ATLAS bulgusu geçersiz");
   const prev: Finding = previous.finding;
   const user = dataPrompt(input);
-  const followUp = disputePrompt(fields, prev.evidence.map((e) => e.record_id));
+  // ATLAS'a kendi kullandığı kanıtlar, gördüğü opak kimliklerle hatırlatılır
+  const view = agentView(input);
+  const followUp = disputePrompt(fields, prev.evidence.map((e) => view.toOpaque.get(e.record_id) ?? e.record_id));
   const hash = inputHash(AGENT, "dispute", systemPrompt(AGENT), user, previous.raw, followUp);
   try {
     log.agent(AGENT, `uyuşmazlık turu: yalnızca "${fields.join(", ")}" alanında ayrışıldığı bildirildi`);
@@ -84,7 +86,7 @@ export async function runAtlasDispute(input: AgentInput, previous: AgentOutcome,
           { role: "user", content: followUp },
         ]),
     );
-    return outcomeFromRaw(raw, validationContext(AGENT, input), { phase: "dispute", cached, model: config.atlasModel, durationMs: Date.now() - started });
+    return outcomeFromRaw(raw, AGENT, input, { phase: "dispute", cached, model: config.atlasModel, durationMs: Date.now() - started });
   } catch (e) {
     return failedOutcome(AGENT, "dispute", config.atlasModel, started, errMsg(e));
   }

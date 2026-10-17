@@ -37,11 +37,25 @@ function baseline(candles: Candle[], window = 60): { sigma: number; medVol: numb
 
 const round = (x: number, d = 8) => Number(x.toFixed(d));
 
+/** Gerçek verideki fiyat ondalık hassasiyeti (enjekte mum bu hassasiyete yuvarlanır, göze batmasın). */
+function priceDecimals(candles: Candle[]): number {
+  let d = 0;
+  for (const c of candles.slice(-60)) {
+    for (const p of [c.open, c.high, c.low, c.close]) {
+      const s = String(p);
+      const i = s.indexOf(".");
+      if (i >= 0) d = Math.max(d, s.length - i - 1);
+    }
+  }
+  return Math.min(d, 8);
+}
+
 export function injectScenario(candles: Candle[], scenario: Scenario): Candle[] {
   if (candles.length < 2) throw new Error("enjeksiyon için yeterli veri yok");
   const last = candles[candles.length - 1];
   const { sigma, medVol, volMult } = baseline(candles);
   const ts = last.ts + 60_000;
+  const pd = priceDecimals(candles);
   const open = last.close;
   let close: number, high: number, low: number, vol: number;
 
@@ -84,10 +98,10 @@ export function injectScenario(candles: Candle[], scenario: Scenario): Candle[] 
     symbol: last.symbol,
     ts,
     iso: new Date(ts).toISOString(),
-    open: round(open, 2),
-    high: round(Math.max(high, open, close), 2),
-    low: round(Math.min(low, open, close), 2),
-    close: round(close, 2),
+    open: round(open, pd),
+    high: round(Math.max(high, open, close), pd),
+    low: round(Math.min(low, open, close), pd),
+    close: round(close, pd),
     vol: round(vol),
     volCcy: round(vol * close, 4),
     confirm: "1",
