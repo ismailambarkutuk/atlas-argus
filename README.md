@@ -43,7 +43,7 @@ OKX ATK ──► istatistik ── tetik? ──┬──► ATLAS (Gemini) ─
 1. **Veri.** OKX Agent Trade Kit (`okx` CLI) ile 1 dakikalık kapanmış mumlar alınır.
 2. **İstatistik tetiği (LLM yok).** Son mum, önceki 60 muma göre robust z ile ölçülür. Tetik koşulu: fiyat |z| ≥ 2 veya hacim z ≥ 3. Tetik yoksa LLM çağrılmaz.
 3. **İki bağımsız analiz.** ATLAS ve ARGUS farklı sağlayıcılarda çalışır ve aynı ham pencereyi paralel analiz eder. Birbirlerinin çıktısını görmezler. Bulgular serbest metin değil, şemaya uyan JSON olarak döner. Şemaya uymayan çıktı ya da veride olmayan kayda atıf (halüsinasyon) **belirsiz** sayılır.
-4. **Avalanche mührü.** İki bulgunun önce yalnızca hash'i Fuji C-Chain'e yazılır (commit). İkisi de yazıldıktan sonra bulgular açılır (reveal) ve hash doğrulanır.
+4. **Avalanche mührü.** İki bulgunun önce yalnızca hash'i Fuji C-Chain'deki `AtlasArgusSeal` kontratına yazılır (commit). İkisi de yazıldıktan sonra bulgular açılır (reveal); kontrat hash'i zincir üzerinde yeniden hesaplar, uyuşmazsa işlemi reddeder. Avalanche'ın saniyeler içindeki kesinliği bir turun mühürlerini yaklaşık 30 saniyede tamamlar.
 5. **Karşılaştırma (LLM yok).** İki agent aynı sonuca vardı mı? Güven beyanları ve istatistik onayıyla birlikte uyum seviyesi belirlenir: yüksek / orta / belirsiz. Ayrışmada tek turluk bir uyuşmazlık turu yapılır. ATLAS'a yalnızca hangi alanda ayrışıldığı söylenir; fikrini ancak **yeni kanıtla** değiştirebilir.
 6. **Risk motoru (LLM yok).** Saf, deterministik TypeScript. İzinli çiftler, bütçe tavanı, işlem başı limit, günlük zarar sınırı, lot yuvarlama ve minimum miktar burada uygulanır. Kill switch açıksa hiçbir emir gitmez.
 7. **Emir ve rapor.** Onaylanan azaltma emri OKX ATK komutu olarak hazırlanır. Her karar gerekçesiyle HTML/JSON rapora yazılır.
@@ -61,7 +61,8 @@ OKX ATK ──► istatistik ── tetik? ──┬──► ATLAS (Gemini) ─
 |---|---|
 | OKX piyasa verisi (mum, ticker, enstrüman bilgisi) | ✅ ATK ile gerçek çağrılar |
 | ATLAS ve ARGUS analizleri | ✅ Gerçek LLM çağrıları (Gemini, Groq). Demo yanıtları kayıtlı ve **KAYITLI YANIT** etiketiyle oynatılır. |
-| Avalanche Fuji mührü | ✅ Gerçek işlemler. Örnek commit: [Snowtrace](https://testnet.snowtrace.io/tx/0x1094f51be21e5a10bf643ff711440a4bda958015d6f47ec43ec2e7a12627a321) · [mühür cüzdanının tüm işlemleri](https://testnet.snowtrace.io/address/0x54480A9725D919AeF4a9ef45b43552A8237200Ce) |
+| Avalanche Fuji mühür kontratı | ✅ [`AtlasArgusSeal`](contracts/AtlasArgusSeal.sol) Fuji C-Chain'de: [`0xe3317ae0ef28d2bf7205bc79ed0eb65fbf2ee3f0`](https://testnet.snowtrace.io/address/0xe3317ae0ef28d2bf7205bc79ed0eb65fbf2ee3f0). Reveal'da `keccak256(bulgu + salt)` **zincirde** yeniden hesaplanır; değiştirilmiş bulgu, tekrar reveal ve başka adresten reveal kontrat tarafından reddedilir (kurcalama testi yapıldı). |
+| Avalanche Fuji işlemleri | ✅ Gerçek işlemler. Örnek commit: [Snowtrace](https://testnet.snowtrace.io/tx/0x1094f51be21e5a10bf643ff711440a4bda958015d6f47ec43ec2e7a12627a321) · [mühür cüzdanının tüm işlemleri](https://testnet.snowtrace.io/address/0x54480A9725D919AeF4a9ef45b43552A8237200Ce) |
 | Sürekli canlı izleme (`--watch`) | ✅ Gerçek piyasada her dakika |
 | OKX bakiyesi | ✅ Gerçek hesaptan ATK ile okunuyor (`OKX_ACCOUNT=real`). Demo modunda demo anahtarı olmadığı için **SAHTE BAKİYE**; sahte bakiyeyle emir kodda engellidir. |
 | OKX emri | ✅ Risk motorunun onayladığı emir ATK ile OKX TR'ye gönderildi ve gerçekleşti: ordId `4017908707754840064`, 0.00001472 BTC satış, ort. fiyat 81,519.5 USDT (≈1.2 USDT). Bu, emir ayağının testiydi: karar yapay olarak "price_drop / yüksek" verildi; fiyat, bakiye ve lot gerçekti. Varsayılan **DRY_RUN**'dır: demolarda emir hazırlanır ama gönderilmez. |
@@ -138,7 +139,9 @@ src/
   data/            collector (OKX), replay, inject (etiketli yapay anomali)
   stats/           robust z
   agents/          atlas, argus, ortak şema/istem, kayıt (cache), OpenAI uyumlu istemci
-  chain/seal.ts    SelfTxSeal (Fuji) + LocalLogSeal (yedek), commit → reveal
+  chain/seal.ts    ContractSeal (AtlasArgusSeal) + SelfTxSeal + LocalLogSeal (yedek)
+  chain/deploy.ts  kontratı derler (solc 0.8.26) ve Fuji'ye deploy eder
+contracts/         AtlasArgusSeal.sol, ABI/bytecode, deployment.json
   compare.ts       uyum kuralları ve uyuşmazlık turu
   risk.ts          saf risk motoru (lot yuvarlama BigInt ile)
   execute.ts       emir (DRY_RUN), bakiye, enstrüman bilgisi
@@ -153,6 +156,6 @@ Her modül tek başına çalıştırılabilir; örneğin `npx tsx src/risk.ts` y
 ## Sınırlar ve sonraki adımlar
 
 - Günlük zarar sınırı kodda var, ama gerçekleşen kâr/zarar henüz emir geçmişinden hesaplanmıyor (harcanan bütçe takip ediliyor). Sonraki adım: dolum fiyatlarından gerçekleşen zararın hesaplanması.
-- Mühür şu an cüzdanın kendine gönderdiği 0 değerli işlemlerin veri alanında duruyor; hash doğrulaması zincir dışında yapılıyor. Bir mühür kontratı bu doğrulamayı zincir üzerinde yapabilir.
+- Kontrat, iki agent'ın da commit etmesini reveal için şart koşmuyor; bu sıra istemci tarafında (`sealAndReveal`) uygulanıyor. Sonraki adım: tur bazında "iki commit tamam" kontrolünü kontrata taşımak.
 - İstatistik tetiği bilinçli olarak hassas (gerçek BTC verisinde yaklaşık 8 dakikada bir). Eleme işini iki agent'ın uyumu yapıyor. Ücretsiz LLM kotası için watch modunda tur sonrası bekleme ve oturum başına tur tavanı var.
 - Değerlendirme örneklemi küçük. Altyapı daha fazla pencereyle tekrar çalıştırılmaya hazır (`--resume`).

@@ -167,7 +167,8 @@ Kurallar (tüm değerler `.env`/`config.ts`'ten okunur, kodda sabit yazılmaz):
 - Ortak arayüz: `SealProvider { commit(rec): Promise<Receipt>; reveal(rec): Promise<Receipt> }`
   - `SelfTxSeal` (**birincil**): cüzdanın kendine 0 değerli tx'i, mühür `data` alanında
   - `LocalLogSeal` (yedek): aynı kayıt yerel dosyaya, zincire yazılmaz
-  - `ContractSeal` (isteğe bağlı, zaman kalırsa)
+  - `ContractSeal` ✅ `AtlasArgusSeal` Fuji'de `0xe3317ae0ef28d2bf7205bc79ed0eb65fbf2ee3f0`;
+    reveal'da hash zincirde doğrulanır (`SEAL_PROVIDER=contract`)
 - `hash = keccak256(canonicalJSON(bulgu) + salt)`, salt bulgu başına rastgele 32 bayt.
 - Commit verisi: `agent`, `round_id`, `hash`. Reveal: bulgu + salt, hash
   yeniden hesaplanıp doğrulanır.

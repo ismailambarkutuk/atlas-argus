@@ -11,7 +11,8 @@
     "record:diverge": "tsx src/main.ts --replay recordings/BTC-USDT_demo.jsonl --inject whipsaw --record-agents",
     "evaluate": "tsx src/evaluate.ts --data recordings/eval_BTC-USDT_1792047240000_1792227180000.jsonl --cached",
     "evaluate:resume": "tsx src/evaluate.ts --data recordings/eval_BTC-USDT_1792047240000_1792227180000.jsonl --resume",
-    "watch": "tsx src/main.ts --watch --symbol BTC-USDT"
+    "watch": "tsx src/main.ts --watch --symbol BTC-USDT",
+    "deploy": "tsx src/chain/deploy.ts --deploy"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "solc": "0.8.26",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

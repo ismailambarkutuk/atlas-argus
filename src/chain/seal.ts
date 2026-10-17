@@ -5,12 +5,13 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { createPublicClient, createWalletClient, http, keccak256, toHex, stringToHex, type Hex } from "viem";
+import { createPublicClient, createWalletClient, http, keccak256, toHex, stringToHex, type Abi, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { avalancheFuji } from "viem/chains";
 import { config } from "../config.js";
 import { ROOT, log, errMsg, withTimeout, isMain } from "../util.js";
 import type { Finding } from "../agents/schema.js";
+import { loadDeployment, type Deployment } from "./deploy.js";
 
 export interface SealRecord {
   agent: string;
@@ -22,7 +23,7 @@ export interface SealRecord {
 }
 
 export interface Receipt {
-  provider: "selftx" | "local";
+  provider: "selftx" | "contract" | "local";
   kind: "commit" | "reveal";
   agent: string;
   round_id: string;
@@ -176,17 +177,80 @@ export class FallbackSeal implements SealProvider {
   }
 }
 
+/**
+ * Kontrat mührü: AtlasArgusSeal (contracts/). Reveal'da keccak256(bulgu + salt) ZİNCİR
+ * ÜZERİNDE yeniden hesaplanır; uyuşmazsa kontrat işlemi reddeder. Her çağrı önce ücretsiz
+ * simüle edilir, reddedilecek işlem gönderilmez. İşlemler sırayla gider.
+ */
+export class ContractSeal implements SealProvider {
+  readonly name = "ContractSeal";
+  private queue: Promise<unknown> = Promise.resolve();
+  private account;
+  private wallet;
+  private pub;
+
+  constructor(privateKey: string, private dep: Deployment & { abi: Abi }) {
+    const pk = (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as Hex;
+    this.account = privateKeyToAccount(pk);
+    const transport = http(config.avaxRpcUrl, { timeout: config.chainTimeoutMs });
+    this.wallet = createWalletClient({ account: this.account, chain: avalancheFuji, transport });
+    this.pub = createPublicClient({ chain: avalancheFuji, transport });
+  }
+
+  private enqueue<T>(job: () => Promise<T>): Promise<T> {
+    const next = this.queue.then(job, job);
+    this.queue = next.catch(() => undefined);
+    return next;
+  }
+
+  private async write(kind: Receipt["kind"], rec: SealRecord, args: readonly unknown[]): Promise<Receipt> {
+    const base = { provider: "contract" as const, kind, agent: rec.agent, round_id: rec.round_id, phase: rec.phase, hash: rec.hash };
+    const send = async (): Promise<Hex> => {
+      const { request } = await this.pub.simulateContract({ account: this.account, address: this.dep.address, abi: this.dep.abi, functionName: kind, args });
+      const txHash = await this.wallet.writeContract(request);
+      const receipt = await this.pub.waitForTransactionReceipt({ hash: txHash, timeout: config.chainTimeoutMs });
+      if (receipt.status !== "success") throw new Error(`tx başarısız: ${txHash}`);
+      return txHash;
+    };
+    try {
+      const txHash = await this.enqueue(() => withTimeout(send(), config.chainTimeoutMs + 5000, `kontrat ${kind}`));
+      return { ...base, ok: true, txHash, explorerUrl: SNOWTRACE_TX + txHash, verified: kind === "reveal" ? true : undefined };
+    } catch (e) {
+      const reason = (e as { shortMessage?: string }).shortMessage ?? errMsg(e);
+      return { ...base, ok: false, verified: kind === "reveal" ? false : undefined, error: `kontrat reddetti/başarısız: ${reason}` };
+    }
+  }
+
+  commit(rec: SealRecord): Promise<Receipt> {
+    return this.write("commit", rec, [rec.round_id, rec.agent, rec.phase, rec.hash]);
+  }
+
+  /** Bulgu, hash'te kullanılan canonical JSON metniyle birebir gönderilir. */
+  reveal(rec: SealRecord): Promise<Receipt> {
+    return this.write("reveal", rec, [rec.round_id, rec.agent, rec.phase, canonicalJSON(rec.finding), rec.salt]);
+  }
+}
+
 export function createSealProvider(): SealProvider {
   const local = new LocalLogSeal();
-  if (config.sealProvider !== "selftx") return local;
+  if (config.sealProvider !== "selftx" && config.sealProvider !== "contract") return local;
   if (!config.avaxPrivateKey) {
     log.warn("MÜHÜR", "AVAX_PRIVATE_KEY yok; LocalLogSeal (yerel, zincire yazılmaz) kullanılıyor");
     return local;
   }
   try {
+    if (config.sealProvider === "contract") {
+      const dep = loadDeployment();
+      if (!dep) {
+        log.warn("MÜHÜR", "contracts/deployment.json yok (önce: npx tsx src/chain/deploy.ts --deploy); SelfTxSeal kullanılıyor");
+        return new FallbackSeal(new SelfTxSeal(config.avaxPrivateKey), local);
+      }
+      log.info("MÜHÜR", `AtlasArgusSeal kontratı: ${dep.address}`);
+      return new FallbackSeal(new ContractSeal(config.avaxPrivateKey, dep), local);
+    }
     return new FallbackSeal(new SelfTxSeal(config.avaxPrivateKey), local);
   } catch (e) {
-    log.warn("MÜHÜR", `SelfTxSeal kurulamadı (${errMsg(e)}); LocalLogSeal kullanılıyor`);
+    log.warn("MÜHÜR", `zincir mührü kurulamadı (${errMsg(e)}); LocalLogSeal kullanılıyor`);
     return local;
   }
 }

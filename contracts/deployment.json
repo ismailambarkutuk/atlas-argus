@@ -1,0 +1,9 @@
+{
+  "network": "avalanche-fuji",
+  "chainId": 43113,
+  "address": "0xe3317ae0ef28d2bf7205bc79ed0eb65fbf2ee3f0",
+  "txHash": "0x9ad16d60865733a3bd5d1b9a875688a8e4b411689b340b5122e3a1c6062eadb8",
+  "deployer": "0x54480A9725D919AeF4a9ef45b43552A8237200Ce",
+  "deployedAt": "2026-10-17T14:02:20.861Z",
+  "compiler": "solc 0.8.26+commit.8a97fa7a.Emscripten.clang"
+}
