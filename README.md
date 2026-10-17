@@ -105,6 +105,14 @@ Raporlar `reports/` altına HTML ve JSON olarak yazılır. Demo senaryoları int
 
 Kill switch: `KILL_SWITCH=1` ya da proje kökünde `KILL` adlı bir dosya. Watch modunda izlemeyi tamamen durdurur.
 
+### Canlı arayüz
+
+```
+npm run ui        →  http://127.0.0.1:4173
+```
+
+Arayüz, sistemi (`src/main.ts`) alt süreç olarak çalıştırır ve loglarını tarayıcıya canlı akıtır. Agent'ların karar verişi adım adım görünür: veri, robust z tetiği, ATLAS ve ARGUS'un paralel analizi, bulguların önce mühürlenip sonra açılması, karşılaştırma, risk motoru ve emir. Senaryolar düğmeyle başlar; kill switch arayüzden açılıp kapatılabilir. Geçmiş turlar `?report=<dosya>` linkiyle tekrar gösterilebilir. Backend'e dokunmaz: sunucu yalnızca `127.0.0.1`'e bağlanır, tarayıcıdan serbest argüman kabul etmez, yalnızca sabit senaryo listesini çalıştırır.
+
 ## Değerlendirme
 
 Soru: *Uyumu yüksek bulgular gerçekten daha isabetli mi?* Gerçek BTC-USDT 1 dakikalık verisinden 10 olay penceresi (istatistik tetiği çalışan) ve 10 sakin pencere seçildi. Agent'lar yalnızca pencere sonuna kadarki veriyi gördü. Enjekte veri değerlendirmeye dahil değildir.

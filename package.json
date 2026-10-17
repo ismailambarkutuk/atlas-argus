@@ -12,7 +12,8 @@
     "evaluate": "tsx src/evaluate.ts --data recordings/eval_BTC-USDT_1792047240000_1792227180000.jsonl --cached",
     "evaluate:resume": "tsx src/evaluate.ts --data recordings/eval_BTC-USDT_1792047240000_1792227180000.jsonl --resume",
     "watch": "tsx src/main.ts --watch --symbol BTC-USDT",
-    "deploy": "tsx src/chain/deploy.ts --deploy"
+    "deploy": "tsx src/chain/deploy.ts --deploy",
+    "ui": "tsx ui/server.ts"
   },
   "keywords": [],
   "author": "",
