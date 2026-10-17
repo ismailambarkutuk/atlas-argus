@@ -5,7 +5,7 @@
 // Örnek: npx tsx src/main.ts --replay recordings/BTC-USDT_demo.jsonl --inject drop --cached
 // Sürekli izleme: npx tsx src/main.ts --watch --symbol BTC-USDT  (Ctrl+C ile durur)
 import path from "node:path";
-import { config, isDryRun, killSwitchStatus } from "./config.js";
+import { accountLabel, config, isDryRun, killSwitchStatus } from "./config.js";
 import { ROOT, log, parseArgs, errMsg } from "./util.js";
 import { appendCandles, fetchClosedCandles, fetchTickerPrice, writeRecording } from "./data/collector.js";
 import { loadRecording } from "./data/replay.js";
@@ -119,7 +119,8 @@ async function runRound(candles: Candle[], i: number, signals: Signals, ctx: Run
     }
     balance = await readBalance(c.symbol.split("-")[0]);
     instrument = await readInstrument(c.symbol);
-    if (balance.source === "mock") uncertainties.push("Bakiye SAHTE (mock); gerçek bakiye okuması henüz bağlı değil");
+    if (!balance) uncertainties.push("Bakiye okunamadı → emir yok");
+    else if (balance.source === "mock") uncertainties.push("Bakiye SAHTE (mock): demo modunda gerçek bakiye okunmaz");
   }
 
   const kill = killSwitchStatus();
@@ -276,7 +277,7 @@ async function main(): Promise<void> {
     log.banner([
       "ATLAS–ARGUS · SÜREKLİ İZLEME (--watch)",
       `Sembol: ${symbol} · veri: OKX anlık, her dakika`,
-      `DRY_RUN: ${isDryRun() ? "AÇIK — emir gönderilmez" : "KAPALI — demo hesaba emir gidebilir"}`,
+      `OKX hesabı: ${accountLabel()} · DRY_RUN: ${isDryRun() ? "AÇIK — emir gönderilmez" : "KAPALI — EMİR GİDEBİLİR"}`,
       `Kill switch: ${kill.on ? `AÇIK (${kill.reason})` : "kapalı"}`,
     ]);
     return watch(symbol, mode);
@@ -288,7 +289,7 @@ async function main(): Promise<void> {
     "ATLAS–ARGUS · Bağımsız doğrulamalı kripto koruma agent'ı",
     `Veri: ${replayFile ? `REPLAY ${replayFile}` : "OKX piyasa verisi (anlık)"}${scenario ? ` + ENJEKTE: ${scenario}` : ""}`,
     `Agent modu: ${mode === "cached" ? "KAYITLI YANIT" : mode === "record" ? "çağır + kaydet" : "çağır"}`,
-    `DRY_RUN: ${isDryRun() ? "AÇIK — emir gönderilmez" : "KAPALI — demo hesaba emir gidebilir"}`,
+    `OKX hesabı: ${accountLabel()} · DRY_RUN: ${isDryRun() ? "AÇIK — emir gönderilmez" : "KAPALI — EMİR GİDEBİLİR"}`,
     `Kill switch: ${kill.on ? `AÇIK (${kill.reason}) — hiçbir emir gitmez` : "kapalı"}`,
   ]);
 

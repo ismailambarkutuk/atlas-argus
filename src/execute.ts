@@ -1,9 +1,10 @@
-// Aksiyon: risk motorunun onayladığı emri demo hesapta uygular. Varsayılan DRY_RUN=1:
+// Aksiyon: risk motorunun onayladığı emri OKX'te uygular. Varsayılan DRY_RUN=1:
 // emir hazırlanır, gösterilir, loglanır ama GÖNDERİLMEZ.
-// Bakiye okuma şimdilik SAHTE (mock): OKX API anahtarı henüz yok.
+// Hesap türü OKX_ACCOUNT ile seçilir: demo (simülasyon; demo anahtarı olmadığı için bakiye
+// SAHTE) veya real (yalnızca bu iş için fonlanmış izole hesap; bakiye ATK ile okunur).
 import fs from "node:fs";
 import path from "node:path";
-import { isDryRun, killSwitchStatus } from "./config.js";
+import { accountLabel, config, isDryRun, killSwitchStatus } from "./config.js";
 import { runOkx } from "./okx.js";
 import { ROOT, log, isMain } from "./util.js";
 import type { Balance, Instrument, RiskDecision, RiskState, ValidatedOrder } from "./risk.js";
@@ -21,21 +22,39 @@ export interface ExecResult {
 const STATE_FILE = path.join(ROOT, "state", "risk-state.json");
 const INSTRUMENT_CACHE = path.join(ROOT, "recordings", "instruments.json");
 
-// --- Bakiye (SAHTE) ---
+// --- Hesap seçimi ---
 
-/** Demo için sabit sahte bakiyeler. Gerçek çağrı API anahtarı gelince bağlanacak. */
+/** Hesap türüne göre ATK global bayrakları: demo → --demo, real → bayrak yok. */
+export function accountFlags(): string[] {
+  return config.okxAccount === "demo" ? ["--demo"] : [];
+}
+
+// --- Bakiye ---
+
+/** Demo hesap anahtarı olmadığı için demo modda kullanılan sabit sahte bakiyeler. */
 const MOCK_BALANCES: Record<string, number> = { BTC: 0.05, ETH: 1.5, USDT: 1000 };
 
 /**
- * Bakiye okuma. ŞİMDİLİK SAHTE DEĞER döndürür ve source: "mock" ile işaretler.
- * TODO (anahtar gelince): runOkx(["--demo", "account", "balance", ccy]) çağrısı
- * ve yanıttan ilgili para biriminin kullanılabilir bakiyesinin ayrıştırılması.
- * Yanıt biçimi API anahtarıyla bir kez doğrulanmadan bu kısım yazılmayacak.
+ * Bakiye okuma. real modda ATK ile gerçekten okunur (`okx account balance <ccy>`);
+ * demo modda SAHTE değer döner (source: "mock"). Okunamazsa null → risk motoru reddeder.
  */
-export async function readBalance(ccy: string): Promise<Balance> {
-  const available = MOCK_BALANCES[ccy] ?? 0;
-  log.warn("BAKİYE", `SAHTE BAKİYE kullanılıyor: ${available} ${ccy} (gerçek okuma henüz bağlı değil)`);
-  return { ccy, available, source: "mock" };
+export async function readBalance(ccy: string): Promise<Balance | null> {
+  if (config.okxAccount === "demo") {
+    const available = MOCK_BALANCES[ccy] ?? 0;
+    log.warn("BAKİYE", `SAHTE BAKİYE kullanılıyor: ${available} ${ccy} (demo hesap anahtarı yok)`);
+    return { ccy, available, source: "mock" };
+  }
+  const r = await runOkx([...accountFlags(), "account", "balance", ccy]);
+  const row = Array.isArray(r.data) ? (r.data[0] as { details?: { ccy?: string; availBal?: string }[] } | undefined) : undefined;
+  const detail = row?.details?.find((x) => x.ccy === ccy);
+  // Bakiye hiç yoksa OKX o para biriminin satırını döndürmeyebilir: bu 0 demektir
+  const available = detail ? Number(detail.availBal) : r.ok && Array.isArray(row?.details) ? 0 : NaN;
+  if (!r.ok || !Number.isFinite(available)) {
+    log.error("BAKİYE", `bakiye okunamadı → emir yok: ${r.error ?? "beklenmeyen yanıt biçimi"}`);
+    return null;
+  }
+  log.info("BAKİYE", `${accountLabel()}: ${available} ${ccy} kullanılabilir`);
+  return { ccy, available, source: "okx" };
 }
 
 // --- Enstrüman bilgisi (halka açık piyasa verisi) ---
@@ -96,17 +115,21 @@ function recordSpend(notional: number): void {
 
 // --- Emir ---
 
-/** Argümanlar yalnızca risk.ts'in doğrulanmış emrinden kurulur. Demo modu her çağrıda açıkça seçilir. */
+/** Argümanlar yalnızca risk.ts'in doğrulanmış emrinden kurulur. Hesap türü her çağrıda açıkça seçilir. */
 export function buildOrderArgs(o: ValidatedOrder): string[] {
-  return ["--demo", "spot", "place", "--instId", o.instId, "--side", o.side, "--ordType", o.ordType, "--sz", o.sz, "--tdMode", o.tdMode];
+  return [...accountFlags(), "spot", "place", "--instId", o.instId, "--side", o.side, "--ordType", o.ordType, "--sz", o.sz, "--tdMode", o.tdMode];
 }
 
-/** Çalışma anı güvenlik kontrolü (kural 1): "live" içeren argüman veya eksik --demo → ret. */
+/**
+ * Çalışma anı güvenlik kontrolü (kural 1): "live" içeren argüman → ret. Argüman yapısı
+ * seçili hesap türüyle birebir uyuşmalı: demo'da başta tek bir --demo, real'de hiç yok.
+ */
 export function assertSafeOrderArgs(args: string[]): void {
   const bad = args.find((a) => a.toLowerCase().includes("live"));
   if (bad !== undefined) throw new Error(`emir reddedildi: yasaklı argüman "${bad}"`);
-  if (args[0] !== "--demo") throw new Error("emir reddedildi: demo modu açıkça seçilmemiş");
-  if (args.filter((a) => a === "--demo").length !== 1) throw new Error("emir reddedildi: beklenmeyen argüman yapısı");
+  const demoCount = args.filter((a) => a === "--demo").length;
+  if (config.okxAccount === "demo" && (args[0] !== "--demo" || demoCount !== 1)) throw new Error("emir reddedildi: demo modu açıkça seçilmemiş");
+  if (config.okxAccount === "real" && (demoCount !== 0 || args[0] !== "spot")) throw new Error("emir reddedildi: beklenmeyen argüman yapısı");
 }
 
 export async function executeDecision(decision: RiskDecision, balance: Balance | null): Promise<ExecResult> {
@@ -139,12 +162,12 @@ export async function executeDecision(decision: RiskDecision, balance: Balance |
   }
 
   if (!balance || balance.source === "mock") {
-    const message = "SAHTE BAKİYE ile gerçek (demo) emir gönderilmez; önce gerçek bakiye okuması bağlanmalı";
+    const message = "SAHTE BAKİYE ile emir gönderilmez; gerçek bakiye için OKX_ACCOUNT=real ve hesap anahtarı gerekli";
     log.error("EMİR", message);
     return { status: "REJECTED", dryRun, args, message };
   }
 
-  log.stage("EMİR", `demo hesaba gönderiliyor: ${shown}`);
+  log.stage("EMİR", `${accountLabel()} → gönderiliyor: ${shown}`);
   const r = await runOkx(args, { timeoutMs: 30000 });
   if (!r.ok) {
     log.error("EMİR", `gönderim başarısız → belirsiz: ${r.error}`);
@@ -156,7 +179,7 @@ export async function executeDecision(decision: RiskDecision, balance: Balance |
     return { status: "FAILED", dryRun, args, message: row?.sMsg ?? "ordId yok" };
   }
   recordSpend(decision.order.notionalUsdt);
-  log.ok("EMİR", `demo emir gönderildi, ordId ${row.ordId}`);
+  log.ok("EMİR", `emir gönderildi (${accountLabel()}), ordId ${row.ordId}`);
   return { status: "SENT", dryRun, args, ordId: row.ordId, message: "gönderildi" };
 }
 

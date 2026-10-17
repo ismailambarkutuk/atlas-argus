@@ -15,7 +15,8 @@ Piyasa verisi ve emir tarafı tamamen **OKX Agent Trade Kit (ATK)** üzerinden �
 | `okx market candles <çift> --bar 1m --limit 300 [--after <ms>]` | [collector.ts](src/data/collector.ts) | 1 dakikalık kapanmış mumlar (canlı izleme, kayıt, tarihsel değerlendirme) | ✅ Gerçek çağrı |
 | `okx market ticker <çift>` | [collector.ts](src/data/collector.ts) | Anlık fiyat (canlı modda emir boyutu için) | ✅ Gerçek çağrı |
 | `okx market instruments --instType SPOT --instId <çift>` | [execute.ts](src/execute.ts) | Lot adımı ve minimum emir miktarı (risk motoru miktarı bunlara göre yuvarlar) | ✅ Gerçek çağrı |
-| `okx --demo spot place --instId <çift> --side sell --ordType market --sz <miktar> --tdMode cash` | [execute.ts](src/execute.ts) | Koruma amaçlı kısmi satış | ⚠️ Risk motoru üretir, **DRY_RUN** gereği gönderilmez |
+| `okx account balance <ccy>` | [execute.ts](src/execute.ts) | Satılabilecek bakiye (risk motoru emri bunu aşmayacak şekilde boyutlar) | ✅ Gerçek çağrı (OKX TR) |
+| `okx [--demo] spot place --instId <çift> --side sell --ordType market --sz <miktar> --tdMode cash` | [execute.ts](src/execute.ts) | Koruma amaçlı kısmi satış | ✅ Gerçek hesapta gönderildi ve gerçekleşti (aşağıya bakın). Varsayılan **DRY_RUN**: emir hazırlanır, gönderilmez |
 
 Örnek çıktı (`npx tsx src/okx.ts`):
 
@@ -62,8 +63,8 @@ OKX ATK ──► istatistik ── tetik? ──┬──► ATLAS (Gemini) ─
 | ATLAS ve ARGUS analizleri | ✅ Gerçek LLM çağrıları (Gemini, Groq). Demo yanıtları kayıtlı ve **KAYITLI YANIT** etiketiyle oynatılır. |
 | Avalanche Fuji mührü | ✅ Gerçek işlemler. Örnek commit: [Snowtrace](https://testnet.snowtrace.io/tx/0x1094f51be21e5a10bf643ff711440a4bda958015d6f47ec43ec2e7a12627a321) · [mühür cüzdanının tüm işlemleri](https://testnet.snowtrace.io/address/0x54480A9725D919AeF4a9ef45b43552A8237200Ce) |
 | Sürekli canlı izleme (`--watch`) | ✅ Gerçek piyasada her dakika |
-| OKX emri | ⚠️ Risk motoru emri onaylar ve tam ATK komutunu (`okx --demo spot place …`) üretir, ama **DRY_RUN** gereği gönderilmez |
-| OKX bakiyesi | ⚠️ Şimdilik **SAHTE BAKİYE** (mock). Sahte bakiyeyle gerçek emir kodda engellidir. |
+| OKX bakiyesi | ✅ Gerçek hesaptan ATK ile okunuyor (`OKX_ACCOUNT=real`). Demo modunda demo anahtarı olmadığı için **SAHTE BAKİYE**; sahte bakiyeyle emir kodda engellidir. |
+| OKX emri | ✅ Risk motorunun onayladığı emir ATK ile OKX TR'ye gönderildi ve gerçekleşti: ordId `4017908707754840064`, 0.00001472 BTC satış, ort. fiyat 81,519.5 USDT (≈1.2 USDT). Bu, emir ayağının testiydi: karar yapay olarak "price_drop / yüksek" verildi; fiyat, bakiye ve lot gerçekti. Varsayılan **DRY_RUN**'dır: demolarda emir hazırlanır ama gönderilmez. |
 
 Mührün kanıtladığı şey: hiçbir agent, diğerinin cevabı açıklandıktan sonra fikrini değiştirmedi. ARGUS'un ATLAS'ın çıktısını görmediğini ise kod yapısı sağlar (ayrı çağrı, yalnızca ham veri), zincir değil.
 
@@ -121,7 +122,7 @@ Soru: *Uyumu yüksek bulgular gerçekten daha isabetli mi?* Gerçek BTC-USDT 1 d
 ## Güvenlik ilkeleri
 
 - **Varsayılan `DRY_RUN=1`.** Gerçek emir yalnızca açıkça `DRY_RUN=0` ile gider.
-- **Yalnızca OKX demo hesabı.** Her emirde `--demo` zorunludur. Argümanlarda "live" geçen emir çalışma anında reddedilir.
+- **Yalnızca demo hesap veya izole etkinlik hesabı.** `OKX_ACCOUNT=demo`'da her emirde `--demo` zorunludur; `real` yalnızca bu iş için fonlanmış 30 USDT'lik hesapla, düşük limitlerle (bütçe 30, işlem başı 5, günlük zarar 5 USDT) kullanılır. API izni Read + Trade, çekim yok. Argümanlarda "live" geçen emir çalışma anında reddedilir.
 - **LLM metni asla komut satırına girmez.** Emir argümanları yalnızca risk motorunun doğruladığı değerlerden oluşur: izinli çift, lot katına aşağı yuvarlanmış miktar, sabit emir tipi.
 - **Belirsizlik = aksiyon yok.** Hata, zaman aşımı, geçersiz JSON ve halüsinasyon belirsiz sayılır.
 - **Agent'lar opak kimlik görür** (`r-0001…`). Gerçek kayıt kimlikleri ve enjeksiyon bilgisi agent'lara gitmez.
@@ -150,7 +151,7 @@ Her modül tek başına çalıştırılabilir; örneğin `npx tsx src/risk.ts` y
 
 ## Sınırlar ve sonraki adımlar
 
-- OKX bakiye okuması ve emir gönderimi bir API anahtarı bağlanınca etkinleşecek. Kod yolu hazır, ama emir yanıtının formatı henüz gerçek bir yanıtla doğrulanmadı.
+- Günlük zarar sınırı kodda var, ama gerçekleşen kâr/zarar henüz emir geçmişinden hesaplanmıyor (harcanan bütçe takip ediliyor). Sonraki adım: dolum fiyatlarından gerçekleşen zararın hesaplanması.
 - Mühür şu an cüzdanın kendine gönderdiği 0 değerli işlemlerin veri alanında duruyor; hash doğrulaması zincir dışında yapılıyor. Bir mühür kontratı bu doğrulamayı zincir üzerinde yapabilir.
 - İstatistik tetiği bilinçli olarak hassas (gerçek BTC verisinde yaklaşık 8 dakikada bir). Eleme işini iki agent'ın uyumu yapıyor. Ücretsiz LLM kotası için watch modunda tur sonrası bekleme ve oturum başına tur tavanı var.
 - Değerlendirme örneklemi küçük. Altyapı daha fazla pencereyle tekrar çalıştırılmaya hazır (`--resume`).

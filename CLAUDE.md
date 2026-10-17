@@ -12,13 +12,16 @@ olamadığında hiçbir şey yapmayan otonom sistem.
 
 ## Değişmez kurallar (asla ihlal etme)
 
-1. **Sadece OKX demo hesabı.** Demo modu ATK'nın kendi mekanizmasıyla (profil
-   veya bayrak, `--help` ile doğrulanmış olanı) her emir çağrısında açıkça
-   seçilir. `live` kelimesini içeren hiçbir argüman, profil veya yapılandırma
-   kodda bulunmaz. `execute.ts` bunu çalışma anında da kontrol eder ve
-   argüman dizisinde `live` görürse emri reddeder.
+1. **Yalnızca OKX demo hesabı veya bu iş için fonlanmış izole hesap.** Hesap
+   türü `OKX_ACCOUNT` (`demo` | `real`) ile açıkça seçilir; demo'da her emir
+   çağrısında `--demo` zorunludur. `real` yalnızca etkinlik için fonlanmış,
+   küçük bakiyeli hesapla kullanılır (17 Ekim: organizatörlerin gönderdiği 30 USDT;
+   bütçe 30, işlem başı 5, günlük zarar 5 USDT). Ana hesap anahtarı asla kullanılmaz;
+   API izni Read + Trade, Withdraw yok. `live` kelimesini içeren hiçbir argüman,
+   profil veya yapılandırma kodda bulunmaz. `execute.ts` bunu çalışma anında da
+   kontrol eder ve argüman dizisinde `live` görürse emri reddeder.
 2. **Varsayılan DRY_RUN=1.** Emir hazırlanır, risk onayı gösterilir, loglanır
-   ama gönderilmez. Gerçek (demo) emir için açıkça `DRY_RUN=0` gerekir.
+   ama gönderilmez. Emrin gerçekten gönderilmesi için açıkça `DRY_RUN=0` gerekir.
 3. **Risk motorunda LLM yok.** `src/risk.ts` saf, deterministik TypeScript.
    Aksiyonu agent'lar değil bu kod onaylar.
 4. **LLM metni asla komut satırına girmez.** Emir argümanları yalnızca
@@ -252,9 +255,9 @@ KILL_SWITCH=0
 
 1. `okx --help`, `okx spot --help`, `okx swap --help`: demo nasıl seçiliyor,
    hangi emir türleri var
-2. Demo hesap bakiyesini oku: satılabilecek bir varlık var mı
+2. Hesap bakiyesini oku: satılabilecek bir varlık var mı ✅ (17 Ekim, gerçek hesap)
 3. Node'dan `runOkx(["market", ...])` ile bir piyasa çağrısı (Windows .cmd sorunu)
-4. Demo hesapta onaysız emir gidebiliyor mu (önce çok küçük bir test)
+4. Onaysız emir gidebiliyor mu (önce çok küçük bir test) ✅ (ordId 4017908707754840064, 0.00001472 BTC)
 5. İki LLM anahtarını tek satırlık istekle test et, model adlarını doldur
 6. Fuji'de test cüzdanından kendine 0 değerli bir tx
 

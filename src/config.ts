@@ -58,7 +58,16 @@ function agentLlm(prefix: "ATLAS" | "ARGUS", def: ProviderName): AgentLlm {
   return { provider: p, model: str(`${prefix}_MODEL`) || spec.defaultModel, apiKey: str(spec.keyEnv), keyEnv: spec.keyEnv, baseURL: spec.baseURL };
 }
 
+/** OKX hesap türü: demo (simülasyon) veya real (yalnızca bu iş için fonlanmış izole hesap). */
+export type OkxAccount = "demo" | "real";
+function okxAccount(): OkxAccount {
+  const v = str("OKX_ACCOUNT", "demo").toLowerCase();
+  if (v !== "demo" && v !== "real") throw new Error(`Yapılandırma hatası: OKX_ACCOUNT="${v}"; seçenekler: demo, real`);
+  return v;
+}
+
 export const config = Object.freeze({
+  okxAccount: okxAccount(),
   atlas: agentLlm("ATLAS", "anthropic"),
   argus: agentLlm("ARGUS", "openai"),
   llmTimeoutMs: positive("LLM_TIMEOUT_MS", 45000),
@@ -100,6 +109,10 @@ export function isDryRun(): boolean {
   return (process.env.DRY_RUN ?? "1").trim() !== "0";
 }
 
+export function accountLabel(): string {
+  return config.okxAccount === "demo" ? "demo hesap (simülasyon)" : "GERÇEK hesap (izole etkinlik hesabı)";
+}
+
 export const KILL_FILE = path.join(ROOT, "KILL");
 
 /** Kill switch çalışma anında kontrol edilir: KILL_SWITCH=1 veya proje kökünde KILL dosyası. */
@@ -112,6 +125,7 @@ export function killSwitchStatus(): { on: boolean; reason: string } {
 if (isMain(import.meta.url)) {
   log.stage("CONFIG", `DRY_RUN: ${isDryRun() ? "AÇIK (emir gönderilmez)" : "KAPALI (demo emir gönderilebilir)"}`);
   log.stage("CONFIG", `Kill switch: ${killSwitchStatus().reason}`);
+  log.stage("CONFIG", `OKX hesabı: ${accountLabel()}`);
   for (const [name, a] of [["ATLAS", config.atlas], ["ARGUS", config.argus]] as const) {
     log.stage("CONFIG", `${name}: ${a.provider} / ${a.model || "(model yok)"} | ${a.keyEnv}: ${a.apiKey ? "var" : "YOK"}`);
   }
