@@ -64,6 +64,7 @@ async function runRound(candles: Candle[], i: number, signals: Signals, ctx: Run
   let seal: SealOutcome | undefined;
   let disputeSeal: SealOutcome | undefined;
   let compare: CompareResult;
+  let disputeAnnounced: string | undefined;
 
   if (atlas.finding && argus.finding) {
     log.stage("MÜHÜR", `${ctx.seal.name}: iki bulgu commit ediliyor`);
@@ -74,7 +75,8 @@ async function runRound(candles: Candle[], i: number, signals: Signals, ctx: Run
     } else {
       compare = compareInitial(atlas.finding, argus.finding, signals);
       if (compare.needsDispute) {
-        log.warn("KARŞILAŞTIRMA", compare.reasons[0]);
+        disputeAnnounced = compare.reasons[0];
+        log.warn("KARŞILAŞTIRMA", disputeAnnounced);
         const dispute = await runAtlasDispute(input, atlas, compare.disagreement, ctx.mode);
         printAgent(dispute);
         agents.push(dispute);
@@ -95,7 +97,8 @@ async function runRound(candles: Candle[], i: number, signals: Signals, ctx: Run
   } else {
     compare = compareInitial(atlas.finding ?? null, argus.finding ?? null, signals);
   }
-  for (const reason of compare.reasons) log.info("KARŞILAŞTIRMA", reason);
+  // Uyuşmazlık turundan önce yazılan ayrışma satırı tekrar yazılmaz
+  for (const reason of compare.reasons) if (reason !== disputeAnnounced) log.info("KARŞILAŞTIRMA", reason);
   (compare.level === "BELIRSIZ" ? log.warn : log.ok)("KARŞILAŞTIRMA", `Uyum seviyesi: ${LEVEL_TR[compare.level].toLocaleUpperCase("tr-TR")}`);
   if (compare.level === "BELIRSIZ") uncertainties.push("Uyum belirsiz → kural gereği işlem yapılmaz");
 
@@ -213,7 +216,15 @@ async function watch(symbol: string, mode: AgentMode): Promise<void> {
         appendCandles(file, fresh);
         candles = [...candles, ...fresh].slice(-300);
         minutes += fresh.length;
-        if (fresh.length > 1) log.warn("İZLEME", `${fresh.length - 1} mum kaçırılmıştı; yalnızca en yenisi tura aday (eskiler bayat)`);
+        // Tur sürerken (veya ağ hatasında) kapanan mumlar da kontrol edilir; tura yalnızca en yeni mum aday
+        for (let j = candles.length - fresh.length; j < candles.length - 1; j++) {
+          const o = computeSignals(candles, j);
+          if (o.triggered) triggers++;
+          log.info(
+            "İZLEME",
+            `${candles[j].iso.slice(11, 16)} UTC · fiyat z=${o.priceZ.toFixed(2)}, hacim z=${o.volZ.toFixed(2)} · ${o.triggered ? "TETİK ama yeni mum geldiği için bayat → LLM yok" : "normal"} (geç kontrol edildi)`,
+          );
+        }
         const i = candles.length - 1;
         const s = computeSignals(candles, i);
         const zs = `fiyat z=${s.priceZ.toFixed(2)}, hacim z=${s.volZ.toFixed(2)}`;
